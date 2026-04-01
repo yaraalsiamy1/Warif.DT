@@ -34,11 +34,7 @@ export default function Dashboard() {
               className="focus:outline-none"
               title="العودة إلى الصفحة الرئيسية"
             >
-              <img
-                src={logoWarif}
-                alt="شعار وارِف"
-                className="w-16 h-16 object-contain cursor-pointer"
-              />
+              <span className="text-xl font-bold text-[#2E7D32]">وارِف</span>
             </button>
 
             <div className="px-3 py-2 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center gap-3">
