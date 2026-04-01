@@ -9,7 +9,7 @@ export default function SignIn({ onLogin }) {
       <div className="bg-white w-[430px] p-8 rounded-2xl shadow-lg flex flex-col gap-8">
 
         {/* Login Page */}
-        {page === 'login' && <LoginPage onNewUser={() => setPage('registerUser')} />}
+        {page === 'login' && <LoginPage onNewUser={() => setPage('registerUser')} onLogin={onLogin} />}
 
         {/* Register User Page */}
         {page === 'registerUser' && <RegisterUserPage onNext={() => setPage('registerFarm')} />}
@@ -43,7 +43,7 @@ function InputField({ label, placeholder, type = "text" }) {
 }
 
 /* ----------------------------- LOGIN PAGE ----------------------------- */
-function LoginPage({ onNewUser }) {
+function LoginPage({ onNewUser, onLogin }) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-center text-[#2E7D32]">تسجيل الدخول</h1>
