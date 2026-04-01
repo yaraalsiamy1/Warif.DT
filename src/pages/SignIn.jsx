@@ -5,7 +5,7 @@ export default function SignIn({ onLogin }) {
   const [step, setStep] = useState(1);
 
   return (
-    <div className="w-full h-full flex items-center justify-center bg-[#F7F7F4] font-['IBM Plex Sans']" dir="rtl">
+    <div className="w-screen h-screen flex items-center justify-center bg-[#F7F7F4]" dir="rtl">
       <div className="bg-white w-[430px] p-8 rounded-2xl shadow-lg flex flex-col gap-8">
 
         {/* Login Page */}
@@ -45,12 +45,35 @@ function InputField({ label, placeholder, type = "text" }) {
 /* ----------------------------- LOGIN PAGE ----------------------------- */
 function LoginPage({ onNewUser, onLogin }) {
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold text-center text-[#2E7D32]">تسجيل الدخول</h1>
-      <InputField label="البريد الإلكتروني" placeholder="مثال: alsa....@gmail.com" />
-      <InputField label="كلمة المرور" placeholder="مثال: Man12" type="password" />
-      <button onClick={onLogin} className="w-full py-3 bg-[#2E7D32] text-white rounded-xl text-md font-medium hover:bg-[#256a29] text-center text-[20px]">دخول</button>
-      <button onClick={onNewUser} className="text-[#2E7D32] text-md text-[14px] font-medium hover:underline text-center">مستخدم جديد</button>
+    <div className="flex flex-col gap-5">
+      {/* شعار */}
+      <div className="text-center mb-2">
+      <img src="/logo.png" alt="وارِف" className="w-32 h-32 object-contain mx-auto" />        <p className="text-sm text-gray-400 mt-1">نظام إدارة المحميات الزراعية</p>
+      </div>
+
+      {/* عنوان */}
+      <h1 className="text-lg font-semibold text-center text-gray-700">تسجيل الدخول</h1>
+
+      {/* حقول */}
+      <div className="flex flex-col gap-4">
+        <InputField label="البريد الإلكتروني" placeholder="example@gmail.com" type="email" />
+        <InputField label="كلمة المرور" placeholder="••••••••" type="password" />
+      </div>
+
+      {/* زر الدخول */}
+      <button
+        onClick={onLogin}
+        className="w-full py-3 bg-[#2E7D32] text-white rounded-xl font-medium text-base hover:bg-[#256a29] transition-all mt-2"
+      >
+        دخول
+      </button>
+
+      <button
+        onClick={onNewUser}
+        className="text-sm text-gray-400 hover:text-[#2E7D32] text-center transition-all"
+      >
+        ليس لديك حساب؟ <span className="text-[#2E7D32] font-medium">سجّل الآن</span>
+      </button>
     </div>
   );
 }

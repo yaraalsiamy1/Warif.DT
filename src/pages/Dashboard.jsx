@@ -15,123 +15,104 @@ export default function Dashboard() {
   // Navigation scaffold
   const [page, setPage] = useState("dashboard");
   // dashboard | temp | airHumidity | soilMoisture | irrigation | recs | weather | profile | settings
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const go = (to) => setPage(to);
 
   return (
     <div
-      className="relative w-full h-full bg-[#F7F7F4] font-['IBM Plex Sans']"
+      className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
       dir="rtl"
     >
       <div className="w-full h-full flex flex-col">
         {/* ================= Header ================= */}
-        <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-          {/* Right: Logo + Weather pill */}
+        <header className="w-full h-16 bg-white border-b border-gray-100 flex items-center justify-between px-5 flex-shrink-0 z-10">
+          {/* Right: Logo + Temp + Time */}
+          <div className="flex items-center gap-4">
+            <div className="w-px h-4 bg-gray-100" />
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              <span>درجة الحرارة</span>
+              <span className="font-semibold text-[#ea580c]">31°C</span>
+              <span>☀️</span>
+            </div>
+            <div className="w-px h-4 bg-gray-100" />
+            <div className="text-sm text-gray-400">
+              آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+          </div>
+
+          {/* Left: Irrigation mode + alerts + user */}
+        
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => go("dashboard")}
-              className="focus:outline-none"
-              title="العودة إلى الصفحة الرئيسية"
-            >
-              <span className="text-xl font-bold text-[#2E7D32]">وارِف</span>
-            </button>
-
-            <div className="px-3 py-2 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center gap-3">
-              {/* أيقونة الطقس */}
-              <div className="w-8 h-8 rounded-full bg-[#FFF7ED] border border-gray-200 flex items-center justify-center">
-                <TempSunIcon />
-              </div>
-
-              {/* النص */}
-              <div className="flex flex-col leading-tight text-right">
-                <span className="text-[11px] text-gray-500">مكة المكرمة</span>
-                <span className="text-sm font-semibold text-[#1B5E20]">
-                  33°م
-                </span>
-              </div>
-            </div>
+          {/* Alert */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c] animate-pulse" />
+            حرارة مرتفعة
           </div>
 
-          {/* Center: Owner + dropdown */}
-          <div className="relative flex items-center gap-2 cursor-pointer group select-none">
-            <span className="text-lg font-semibold text-gray-800">
-              منصور الزهراني
-            </span>
-            <svg
-              className="w-4 h-4 text-gray-700 transition-transform group-hover:rotate-180"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" />
-            </svg>
-
-            <div className="absolute top-full right-0 mt-2 w-56 bg-white shadow-lg border border-gray-200 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
-              <div className="px-4 py-2 text-gray-700 font-medium border-b bg-gray-50">
-                المحميات التابعة
-              </div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                محمية الخضروات
-              </div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                محمية الفواكه
-              </div>
-              <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
-                محمية الورقيات
-              </div>
-            </div>
+          {/* Connected sensors */}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+           <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
+           3 حساسات متصلة
           </div>
 
-          {/* Left: Mode + Farmer account */}
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-700">الحالة:</span>
+
+            {/* Irrigation toggle */}
+          <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{width: '110px'}}>
+           <button
+             onClick={() => setMode("auto")}
+             className={`flex-1 py-1 text-center text-xs font-medium transition-all ${
+               mode === "auto"
+               ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
+               : "text-gray-400"
+             }`}
+           >
+             تلقائي
+           </button>
+           <button
+             onClick={() => setMode("manual")}
+             className={`flex-1 py-1 text-center text-xs font-medium transition-all ${
+               mode === "manual"
+               ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
+               : "text-gray-400"
+             }`}
+           >
+             يدوي
+           </button>
+          </div>
+
+            {/* User dropdown */}
+            <div className="relative">
               <button
-                onClick={() => setMode(mode === "auto" ? "manual" : "auto")}
-                className={`px-4 py-1 rounded-lg text-sm text-white transition-all ${
-                  mode === "auto" ? "bg-[#43A047]" : "bg-gray-400"
-                }`}
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-s text-gray-600 bg-gray-50 hover:bg-gray-100 transition-all"
               >
-                {mode === "auto" ? "تلقائي" : "يدوي"}
+                <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M6 20c0-4 3-6 6-6s6 2 6 6"/>
+                  </svg>
+                </div>
+                منصور الزهراني
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
-            </div>
 
-            <div className="relative flex items-center gap-2 cursor-pointer group select-none">
-              <div className="w-9 h-9 rounded-full bg-[#E8F0E8] flex items-center justify-center">
-                <UserIcon />
-              </div>
-              <span className="text-gray-700 text-sm">حساب المزارع</span>
-              <svg
-                className="w-3 h-3 text-gray-600 transition-transform group-hover:rotate-180"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" />
-              </svg>
-
-              <div className="absolute top-full left-0 mt-2 w-52 bg-white shadow-lg border border-gray-200 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all z-50">
-                <div className="px-4 py-2 text-gray-700 font-medium border-b bg-gray-50">
-                  حساب المزارع
-                </div>
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                  onClick={() => go("profile")}
-                >
-                  الملف الشخصي
-                </div>
-                <div
-                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                  onClick={() => go("settings")}
-                >
-                  الإعدادات
-                </div>
-                <div className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm text-red-600">
-                  تسجيل الخروج
-                </div>
-              </div>
-            </div>
+              {showUserMenu && (
+               <div className="absolute left-0 top-full mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
+                 <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
+                   👤 الحساب الشخصي
+                 </button>
+                 <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
+                   ⚙️ الإعدادات
+                 </button>
+                 <button className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
+                   🚪 تسجيل الخروج
+                 </button>
+               </div>
+            )}
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* ================= Body ================= */}
         <main className="flex-1 min-h-0">
@@ -165,22 +146,71 @@ export default function Dashboard() {
 ========================================================= */
 function DashboardHome({ onGo }) {
   return (
-    <div className="w-full h-full overflow-hidden">
-      {/* Container مركزي */}
-      <div className="max-w-[1000px] mx-auto h-full px-7 py-7">
-        <div className="w-full h-full flex flex-col gap-5 min-h-0">
-          {/* Row 1: Sensors */}
-          <div className="grid grid-cols-3 gap-5 items-start">
-            <TemperatureCard onGo={onGo} />
-            <AirHumidityCard onGo={onGo} />
-            <SoilMoistureCard onGo={onGo} />
-          </div>
+    <div className="w-full h-full flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-l border-gray-100 flex flex-col flex-shrink-0 h-full">
+      
+      {/* Logo */}
+      <div className="py-0 flex flex-col items-center justify-center gap-2">
+       <img src="/logo.png" alt="وارِف" className="w-40 h-40 object-contain" />
+      </div>
 
-          {/* Row 2 */}
-          <div className="grid grid-cols-2 gap-5 items-start flex-1 min-h-0">
-            <RecommendationsCard onGo={onGo} />
-            <IrrigationCard onGo={onGo} />
+
+        {/* المحميات */}
+        <div className="p-3 border-b border-gray-50">
+          <div className="text-s text-gray-400 font-semibold mb-2 px-1">المحميات</div>
+
+          {["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"].map((farm, i) => (
+            <div key={farm} className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer text-sm mb-0.5 transition-all ${
+              i === 0 ? "bg-[#f0fdf4] text-[#16a34a] font-medium" : "text-gray-500 hover:bg-gray-50"
+            }`}>
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i === 0 ? "bg-[#16a34a]" : "bg-gray-300"}`} />
+              {farm}
+            </div>
+          ))}
+        </div>
+
+        {/* القائمة */}
+        <div className="p-3 flex-1">
+          <div className="text-s text-gray-400 font-semibold mb-2 px-1">القائمة</div>
+          {[
+            { label: "لوحة التحكم", icon: "🏠", active: true },
+            { label: "التوصيات", icon: "📋", badge: "2" },
+            { label: "الري", icon: "💧" },
+          ].map((item) => (
+            <div key={item.label} className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer text-sm mb-0.5 transition-all ${
+              item.active ? "bg-[#f0fdf4] text-[#16a34a] font-medium" : "text-gray-500 hover:bg-gray-50"
+            }`}>
+              <span>{item.icon}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.badge && (
+                <span className="bg-[#fff7ed] text-[#ea580c] text-[9px] px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* الطقس */}
+        <div className="p-3 border-t border-gray-50">
+          <div className="bg-gray-50 rounded-xl p-3">
+            <div className="text-xs text-gray-400 mb-1">☀️ مكة المكرمة</div>
+            <div className="text-base font-semibold text-gray-800">33°م</div>
+            <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
           </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 h-full overflow-auto p-5 flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-4">
+          <TemperatureCard onGo={onGo} />
+          <AirHumidityCard onGo={onGo} />
+          <SoilMoistureCard onGo={onGo} />
+        </div>
+        <div className="grid grid-cols-2 gap-4 flex-1">
+    
+          <RecommendationsCard onGo={onGo} />
+          <IrrigationCard onGo={onGo} />
         </div>
       </div>
     </div>
@@ -2231,7 +2261,7 @@ function AccountAndSettingsPages({ initialPage = "profile" }) {
 
   return (
     <div
-      className="relative w-full h-full bg-[#F7F7F4] font-['IBM Plex Sans']"
+      className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
       dir={dir}
     >
       <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6">
