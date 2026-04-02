@@ -24,6 +24,52 @@ export default function Dashboard() {
 
   const go = (to) => setPage(to);
 
+  const sendToAI = async (userMessage) => {
+    setChatMessages(prev => [...prev, { role: "user", text: userMessage }]);
+    setChatMessages(prev => [...prev, { role: "bot", text: "⏳ جاري التفكير..." }]);
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-opus-4-5",
+          max_tokens: 1024,
+          system: `أنت مساعد ذكي لنظام وارِف لإدارة المحميات الزراعية. 
+          المستخدم اسمه منصور الزهراني.
+          بيانات المحمية الحالية:
+          - اسم المحمية: محمية الخضروات
+          - درجة الحرارة: 31°C (أعلى من المثالي 22-28°C)
+          - رطوبة الهواء: 58% (ضمن النطاق المثالي)
+          - رطوبة التربة: 42% (ضمن النطاق المثالي)
+          - معدل الري: 60% (متوسط)
+          أجب باللغة العربية بشكل مختصر وواضح.`,
+          messages: [{ role: "user", content: userMessage }],
+        }),
+      });
+
+      const data = await response.json();
+      const aiText = data.content[0].text;
+
+      setChatMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: "bot", text: aiText };
+        return updated;
+      });
+    } catch (error) {
+      setChatMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: "bot", text: "حدث خطأ، حاول مرة ثانية." };
+        return updated;
+      });
+    }
+  };
+
   return (
     <div
       className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
@@ -122,7 +168,7 @@ export default function Dashboard() {
         {/* ================= Body ================= */}
         <main className="flex-1 min-h-0">
           {page === "dashboard" ? (
-            <DashboardHome onGo={go} />
+            <DashboardHome onGo={go} onSendAI={sendToAI} />
           ) : page === "recs" ? (
             <RecommendationsPage onBack={() => go("dashboard")} />
           ) : page === "irrigation" ? (
@@ -141,7 +187,6 @@ export default function Dashboard() {
             <PlaceholderPage page={page} onBack={() => go("dashboard")} />
           )}
         </main>
-    </div>
 
     {/* Chatbot FAB */}
     <button
@@ -151,7 +196,7 @@ export default function Dashboard() {
       {showChat ? (
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       ) : (
-        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       )}
     </button>
 
@@ -180,7 +225,7 @@ export default function Dashboard() {
         </div>
         <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100 bg-white">
           {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
-            <button key={q} onClick={() => setChatMessages(prev => [...prev, { role: "user", text: q }, { role: "bot", text: "جاري التحقق من بيانات محميتك..." }])}
+            <button key={q} onClick={() => sendToAI(q)}
               className="text-[10px] px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] transition-all">
               {q}
             </button>
@@ -188,18 +233,18 @@ export default function Dashboard() {
         </div>
         <div className="px-3 py-2 flex gap-2 border-t border-gray-100 bg-white">
           <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { setChatMessages(prev => [...prev, { role: "user", text: chatInput }, { role: "bot", text: "جاري التحقق..." }]); setChatInput(""); }}}
+            onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); }}}
             placeholder="اسألني عن محميتك..."
             className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#16a34a] bg-gray-50"
           />
-          <button onClick={() => { if (chatInput.trim()) { setChatMessages(prev => [...prev, { role: "user", text: chatInput }, { role: "bot", text: "جاري التحقق..." }]); setChatInput(""); }}}
+          <button onClick={() => { if (chatInput.trim()) { sendToAI(chatInput); setChatInput(""); }}}
             className="w-8 h-8 bg-[#16a34a] rounded-lg flex items-center justify-center hover:bg-[#15803d]">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
       </div>
     )}
-
+    </div>
   </div>
   
   );
@@ -208,7 +253,7 @@ export default function Dashboard() {
 /* =========================================================
    Dashboard Layout (matches screenshot)
 ========================================================= */
-function DashboardHome({ onGo }) {
+function DashboardHome({ onGo , onSendAI }) {
   return (
     <div className="w-full h-full flex">
       {/* Sidebar */}
@@ -265,14 +310,13 @@ function DashboardHome({ onGo }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 h-full overflow-auto p-5 flex flex-col gap-4">
+      <div className="flex-1 h-full overflow-auto p-5 flex flex-col gap-4 min-h-0">
         <div className="grid grid-cols-3 gap-4">
           <TemperatureCard onGo={onGo} />
           <AirHumidityCard onGo={onGo} />
           <SoilMoistureCard onGo={onGo} />
         </div>
-        <div className="grid grid-cols-2 gap-4 flex-1">
-    
+        <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
           <RecommendationsCard onGo={onGo} />
           <IrrigationCard onGo={onGo} />
         </div>
@@ -288,7 +332,7 @@ function DashboardHome({ onGo }) {
 function CardShell({ children, className = "" }) {
   return (
     <section
-      className={`bg-white rounded-2xl shadow border border-gray-200 ${className}`}
+      className={`bg-white rounded-2xl border border-gray-100 hover:border-gray-200 transition-all ${className}`}
     >
       {children}
     </section>
@@ -299,18 +343,16 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel = "التفاصي
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="text-right">
-        <div className="text-sm font-semibold text-gray-800">{title}</div>
-        {subtitle ? (
-          <div className="text-[11px] text-gray-500 mt-1">{subtitle}</div>
-        ) : null}
+        {/* عنوان الكارد (درجة الحرارة، رطوبة التربة، رطوبة الهواء) */}
+        <div className="text-[20px] font-semibold text-gray-800">{title}</div>
+        {subtitle && <div className="text-sl text-gray-400 mt-1">{subtitle}</div>}
       </div>
-
       <button
         type="button"
         onClick={onDetails}
-        className="text-[11px] text-[#2E7D32] underline hover:text-[#1B5E20]"
+        className="text-xs text-[#16a34a] bg-[#f0fdf4] px-2.5 py-1 rounded-lg hover:bg-[#dcfce7] transition-all shrink-0 font-medium"
       >
-        {detailsLabel}
+        {detailsLabel} ←
       </button>
     </div>
   );
@@ -338,18 +380,18 @@ function SoilMoistureCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, value));
 
   return (
-    <CardShell className="p-4">
+    <CardShell className="p-10">
       <CardTopRow
         title=" التربة"
         subtitle="آخر تحديث: قبل 5 دقائق"
         onDetails={() => onGo("soilMoisture")}
       />
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
             <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-xs">%</span>
+            <span className="text-s">%</span>
           </div>
         </div>
 
@@ -372,7 +414,7 @@ function SoilMoistureCard({ onGo }) {
         </div>
       </div>
 
-      <div className="mt-3 text-sm font-semibold text-center" style={{ color }}>
+      <div className="mt-5 text-sm font-semibold text-center" style={{ color }}>
         {status}
       </div>
     </CardShell>
@@ -397,18 +439,18 @@ function AirHumidityCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, value));
 
   return (
-    <CardShell className="p-4">
+    <CardShell className="p-10">
       <CardTopRow
         title="رطوبة الهواء"
         subtitle="آخر تحديث: قبل 5 دقائق"
         onDetails={() => onGo("airHumidity")}
       />
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
             <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-xs">%</span>
+            <span className="text-s">%</span>
           </div>
         </div>
 
@@ -431,7 +473,7 @@ function AirHumidityCard({ onGo }) {
         </div>
       </div>
 
-      <div className="mt-3 text-sm font-semibold text-center" style={{ color }}>
+      <div className="mt-5 text-sm font-semibold text-center" style={{ color }}>
         {status}
       </div>
     </CardShell>
@@ -456,18 +498,18 @@ function TemperatureCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, ((value - 10) / (45 - 10)) * 100));
 
   return (
-    <CardShell className="p-4">
+    <CardShell className="p-10">
       <CardTopRow
         title="درجة الحرارة"
         subtitle="آخر تحديث: قبل 5 دقائق"
         onDetails={() => onGo("temp")}
       />
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
             <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-xs">°م</span>
+            <span className="text-xl">°C</span>
           </div>
         </div>
 
@@ -490,7 +532,7 @@ function TemperatureCard({ onGo }) {
         </div>
       </div>
 
-      <div className="mt-3 text-sm font-semibold text-center" style={{ color }}>
+      <div className="mt-5 text-sm font-semibold text-center" style={{ color }}>
         {status}
       </div>
     </CardShell>
