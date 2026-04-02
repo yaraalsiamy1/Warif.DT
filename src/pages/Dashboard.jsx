@@ -1,4 +1,3 @@
-
 import { useMemo, useState, useEffect } from "react";
 
 /* =========================================================
@@ -10,6 +9,12 @@ import { useMemo, useState, useEffect } from "react";
 ========================================================= */
 
 export default function Dashboard() {
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { role: "bot", text: "مرحباً منصور! أنا مساعدك الذكي. كيف أساعدك اليوم؟" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+
   const [mode, setMode] = useState("auto");
 
   // Navigation scaffold
@@ -51,7 +56,7 @@ export default function Dashboard() {
           </div>
 
           {/* Connected sensors */}
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
            <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
            3 حساسات متصلة
           </div>
@@ -136,8 +141,67 @@ export default function Dashboard() {
             <PlaceholderPage page={page} onBack={() => go("dashboard")} />
           )}
         </main>
-      </div>
     </div>
+
+    {/* Chatbot FAB */}
+    <button
+      onClick={() => setShowChat(!showChat)}
+      className="fixed bottom-6 left-6 w-20 h-20 bg-[#16a34a] rounded-full flex items-center justify-center shadow-lg hover:bg-[#15803d] transition-all z-50"
+    >
+      {showChat ? (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      ) : (
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      )}
+    </button>
+
+    {showChat && (
+      <div className="fixed bottom-20 left-6 w-72 h-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden z-50">
+        <div className="bg-[#16a34a] px-4 py-3 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center text-lg">🤖</div>
+          <div>
+            <div className="text-white font-semibold text-sm">مساعد وارِف</div>
+            <div className="text-white/70 text-xs">يساعد في الاستفسارات والخدمات الزراعية
+</div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 bg-gray-50">
+          {chatMessages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
+              <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
+                msg.role === "user"
+                  ? "bg-[#16a34a] text-white rounded-bl-sm"
+                  : "bg-white text-gray-700 border border-gray-100 rounded-br-sm"
+              }`}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100 bg-white">
+          {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
+            <button key={q} onClick={() => setChatMessages(prev => [...prev, { role: "user", text: q }, { role: "bot", text: "جاري التحقق من بيانات محميتك..." }])}
+              className="text-[10px] px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] transition-all">
+              {q}
+            </button>
+          ))}
+        </div>
+        <div className="px-3 py-2 flex gap-2 border-t border-gray-100 bg-white">
+          <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { setChatMessages(prev => [...prev, { role: "user", text: chatInput }, { role: "bot", text: "جاري التحقق..." }]); setChatInput(""); }}}
+            placeholder="اسألني عن محميتك..."
+            className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#16a34a] bg-gray-50"
+          />
+          <button onClick={() => { if (chatInput.trim()) { setChatMessages(prev => [...prev, { role: "user", text: chatInput }, { role: "bot", text: "جاري التحقق..." }]); setChatInput(""); }}}
+            className="w-8 h-8 bg-[#16a34a] rounded-lg flex items-center justify-center hover:bg-[#15803d]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    )}
+
+  </div>
+  
   );
 }
 
