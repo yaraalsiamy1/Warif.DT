@@ -66,7 +66,7 @@ export default function SignIn({ onLogin }) {
 }
 
 /* ----------------------------- INPUT FIELD ----------------------------- */
-function InputField({ label, placeholder, type = "text", value, onChange, error }) {
+function InputField({ label, placeholder, type = "text", value, onChange, error, onKeyDown }) {
   return (
     <div className="flex flex-col gap-1 text-right">
       <label className="text-sm font-medium text-gray-700">{label}</label>
@@ -74,6 +74,7 @@ function InputField({ label, placeholder, type = "text", value, onChange, error 
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={onKeyDown}
         className={`border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#81C784] transition-all ${
           error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50 focus:bg-white'
         }`}
@@ -111,7 +112,7 @@ function LoginPage({ onLogin, onNewUser }) {
        errs.username = 'اسم المستخدم غير صحيح';
   
     if (!password) errs.password = 'كلمة المرور مطلوبة';
-    else if (username === 'admin' && password !== '1234') 
+    else if (username === 'admin' && password !== '123456') 
        errs.password = 'كلمة المرور غير صحيحة';
     else if (username === savedUser.username && password !== savedUser.password) 
        errs.password = 'كلمة المرور غير صحيحة';
@@ -130,11 +131,17 @@ function LoginPage({ onLogin, onNewUser }) {
       localStorage.setItem('warif_remember', JSON.stringify({ username, password }));
     } else {
       localStorage.removeItem('warif_remember');
-    }
+    } 
 
     setLoading(true);
     setTimeout(() => { setLoading(false); onLogin(); }, 800);
   };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
+    }
+  };   
 
   return (
     <div className="flex flex-col gap-5">
@@ -152,6 +159,7 @@ function LoginPage({ onLogin, onNewUser }) {
           type="text"
           value={username}
           onChange={setUsername}
+          onKeyDown={handleKeyDown}
           error={errors.username}
         />
         <InputField
@@ -160,6 +168,7 @@ function LoginPage({ onLogin, onNewUser }) {
           type="password"
           value={password}
           onChange={setPassword}
+          onKeyDown={handleKeyDown}
           error={errors.password}
         />
       </div>
