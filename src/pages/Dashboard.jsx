@@ -8,7 +8,13 @@ import { useMemo, useState, useEffect } from "react";
      profile | settings
 ========================================================= */
 
-export default function Dashboard() {
+export default function Dashboard({ onLogout }) {
+  const [userFullName, setUserFullName] = useState('');
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    if (saved.fullName) setUserFullName(saved.fullName);
+  }, []);
+  
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { role: "bot", text: "مرحباً منصور! أنا مساعدك الذكي. كيف أساعدك اليوم؟" }
@@ -144,7 +150,7 @@ export default function Dashboard() {
                     <path d="M6 20c0-4 3-6 6-6s6 2 6 6"/>
                   </svg>
                 </div>
-                منصور الزهراني
+                {userFullName || 'المستخدم'}
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
 
@@ -155,9 +161,11 @@ export default function Dashboard() {
                  </button>
                  <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
                    ⚙️ الإعدادات
-                 </button>
-                 <button className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
-                   🚪 تسجيل الخروج
+                   </button>
+                 <button
+                    onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
+                    🚪 تسجيل الخروج
                  </button>
                </div>
             )}
@@ -180,9 +188,9 @@ export default function Dashboard() {
           ) : page === "soilMoisture" ? (
             <SoilMoisturePage onBack={() => go("dashboard")} />
           ) : page === "profile" ? (
-            <AccountAndSettingsPages initialPage="profile" />
+            <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} />
           ) : page === "settings" ? (
-            <AccountAndSettingsPages initialPage="settings" />
+            <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} />
           ) : (
             <PlaceholderPage page={page} onBack={() => go("dashboard")} />
           )}
@@ -303,7 +311,7 @@ function DashboardHome({ onGo , onSendAI }) {
         <div className="p-3 border-t border-gray-50">
           <div className="bg-gray-50 rounded-xl p-3">
             <div className="text-xs text-gray-400 mb-1">☀️ مكة المكرمة</div>
-            <div className="text-base font-semibold text-gray-800">33°م</div>
+            <div className="text-base font-semibold text-gray-800">33°C</div>
             <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
           </div>
         </div>
@@ -550,18 +558,18 @@ function IrrigationCard({ onGo }) {
     level === "90%" ? "مرتفع" : level === "متوسط" ? "60%" : "30%";
 
   return (
-    <CardShell className="p-4">
+    <CardShell className="p-5">
       <CardTopRow
         title="حالة الري اليوم"
         subtitle="آخر تحديث: قبل 10 دقائق"
         onDetails={() => onGo("irrigation")}
       />
 
-      <div className="mt-5 flex items-center justify-center">
+      <div className="mt-15 flex items-center justify-center">
         <Donut value={percent} />
       </div>
 
-      <div className="mt-2 text-center text-[12px] text-gray-700">
+      <div className="mt-5 text-center text-sm text-gray-700">
         معدل الري
       </div>
 
@@ -570,7 +578,7 @@ function IrrigationCard({ onGo }) {
           <div className="h-full bg-[#EF6C00]" style={{ width: barWidth }} />
         </div>
 
-        <div className="flex items-center justify-between text-[11px] text-gray-500 mt-1">
+        <div className="flex items-center justify-between text-sm text-gray-500 mt-1">
           <span>منخفض</span>
           <span>متوسط</span>
           <span>مرتفع</span>
@@ -599,12 +607,12 @@ function RecommendationsCard({ onGo }) {
   ];
 
   return (
-    <CardShell className="p-4">
+    <CardShell className="p-10">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="text-right">
-          <div className="text-sm font-semibold text-gray-800">التوصيات</div>
-          <div className="text-[11px] text-gray-500 mt-1">
+          <div className="text-xl font-semibold text-gray-800">التوصيات</div>
+          <div className="text-s text-gray-500 mt-1">
             أحدث التوصيات المقترحة
           </div>
         </div>
@@ -612,7 +620,7 @@ function RecommendationsCard({ onGo }) {
         <button
           type="button"
           onClick={() => onGo("recs")}
-          className="text-[11px] text-[#2E7D32] underline hover:text-[#1B5E20]"
+          className="text-sm text-[#2E7D32] underline hover:text-[#1B5E20]"
         >
           عرض الكل
         </button>
@@ -625,7 +633,7 @@ function RecommendationsCard({ onGo }) {
             key={item.id}
             className="flex items-center justify-between gap-3 border border-gray-100 rounded-2xl px-3 py-3"
           >
-            <div className="text-[12px] text-gray-700">{item.text}</div>
+            <div className="text-sm text-gray-700">{item.text}</div>
 
             <div className="w-10 h-10 rounded-2xl bg-[#F1F5F1] border border-gray-200 flex items-center justify-center shrink-0">
               {item.icon}
@@ -689,7 +697,7 @@ function PlaceholderPage({ page, onBack }) {
 
 function Donut({ value }) {
   const v = Math.max(0, Math.min(100, value));
-  const size = 74;
+  const size = 60;
   const stroke = 8;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
@@ -2204,13 +2212,17 @@ function SoilMoisturePage({ onBack }) {
    Account + Settings (Integrated as-is; only added initialPage prop)
 ========================================================= */
 
-function AccountAndSettingsPages({ initialPage = "profile" }) {
+function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) {
+
   const [page, setPage] = useState("dashboard");
   const go = (to) => setPage(to);
 
+
+  const savedUser = JSON.parse(localStorage.getItem('warif_user') || '{}');
   const [profile, setProfile] = useState({
-    username: "منصور",
-    email: "alssayed@example.com",
+    fullName: savedUser.fullName || "منصور الزهراني",
+    username: savedUser.username || "admin",
+    email: savedUser.email || "example@gmail.com",
     password: "********",
   });
 
@@ -2219,11 +2231,21 @@ function AccountAndSettingsPages({ initialPage = "profile" }) {
 
   const [language, setLanguage] = useState("ar"); // "ar" | "en"
 
-  const [sensors, setSensors] = useState([
-    { id: "S1", name: "حساس التربة", type: "رطوبة التربة" },
-    { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة" },
-    { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء" },
-  ]);
+  const sensorMap = {
+    temp: { name: "حساس الحرارة", type: "درجة الحرارة" },
+    humidity: { name: "حساس الرطوبة", type: "رطوبة الهواء" },
+    soil: { name: "حساس التربة", type: "رطوبة التربة" },
+    irrigation: { name: "نظام الري", type: "الري" },
+  };
+  const savedSensors = JSON.parse(localStorage.getItem('warif_user') || '{}').sensors || [];
+  const initialSensors = savedSensors.length > 0
+    ? savedSensors.map((key, i) => ({ id: `S${i+1}`, ...sensorMap[key] }))
+    : [
+        { id: "S1", name: "حساس التربة", type: "رطوبة التربة" },
+        { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة" },
+        { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء" },
+    ];
+  const [sensors, setSensors] = useState(initialSensors);
 
   const [sensorModal, setSensorModal] = useState({
     open: false,
@@ -2372,7 +2394,13 @@ function AccountAndSettingsPages({ initialPage = "profile" }) {
     >
       <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <div className="flex flex-col leading-tight"></div>
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#2E7D32] transition-all"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            رجوع للداشبورد
+          </button>
         </div>
 
         <div className="flex items-center gap-2 bg-[#F1F5F1] rounded-xl p-1">
@@ -2439,6 +2467,7 @@ function AccountAndSettingsPages({ initialPage = "profile" }) {
             onAddSensor={openAddSensor}
             onEditSensor={openEditSensor}
             onDeleteSensor={deleteSensor}
+            onLogout={onLogout}
           />
         )}
       </main>
@@ -2584,6 +2613,11 @@ function Account_ProfilePage({ t, profile, onEdit }) {
           <Account_CardHeader title={t.profile} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Account_EditableField
+              label="الاسم الكامل"
+              value={profile.fullName || '—'}
+              onEdit={() => onEdit("fullName")}
+            />
+            <Account_EditableField
               label={t.username}
               value={profile.username}
               onEdit={() => onEdit("username")}
@@ -2606,13 +2640,7 @@ function Account_ProfilePage({ t, profile, onEdit }) {
   );
 }
 
-function Account_SettingsPage({
-  t,
-  sensors,
-  onAddSensor,
-  onEditSensor,
-  onDeleteSensor,
-}) {
+function Account_SettingsPage({ t, sensors, onAddSensor, onEditSensor, onDeleteSensor, onLogout }) {
   return (
     <div className="w-full max-w-4xl mx-auto">
       <div className="grid grid-cols-1 gap-4">
@@ -2689,13 +2717,17 @@ function Account_SettingsPage({
                 </button>
               }
             />
+
             <Account_ListRow
               title={t.logout}
               subtitle="إنهاء الجلسة الحالية بأمان."
               right={
-                <button className="px-3 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:opacity-95">
-                  {t.logout}
-                </button>
+               <button
+                 onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
+                 className="px-3 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:opacity-95"
+              >
+                 {t.logout}
+              </button>
               }
             />
           </div>

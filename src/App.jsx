@@ -11,7 +11,7 @@ export default function App() {
         <SignIn onLogin={() => setScreen('dashboard')} />
       )}
       {screen === 'dashboard' && (
-        <Dashboard />
+        <Dashboard onLogout={() => setScreen('login')} />
       )}
     </div>
   )
