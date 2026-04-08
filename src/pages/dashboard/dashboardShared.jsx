@@ -1388,8 +1388,14 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${active
-        ? "bg-[#2E7D32] text-white border-[#2E7D32]"
-        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-        }`}
+      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${
+        active
+          ? "bg-[#2E7D32] text-white border-[#2E7D32]"
+          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+      }`}
     >
+      {children}
+    </button>
+  );
+}      
+      

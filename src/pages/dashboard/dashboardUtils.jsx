@@ -268,3 +268,13 @@ function sensorBuildRecommendationsHumidity(current) {
 }
 
 function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
+  if (soilTemp > 30) {
+    return "High temperature";
+  }
+
+  if (soilMoist < 20) {
+    return "Low moisture";
+  }
+
+  return "Normal conditions";
+}
