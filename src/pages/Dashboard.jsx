@@ -51,10 +51,43 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
   }, [firstName]);
 
   const [mode, setMode] = useState("auto");
+  const [weatherData, setWeatherData] = useState({ temp: 31, humidity: 45, condition: "مشمس" });
+
+  useEffect(() => {
+    async function fetchWeather() {
+      try {
+        // الإحداثيات الدقيقة للمزرعة
+        const lat = "21.331608";
+        const lon = "40.061178";
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`);
+        const data = await res.json();
+        if (data.current) {
+          const code = data.current.weather_code;
+          let cond = "مشمس";
+          if (code >= 1 && code <= 3) cond = "غائم جزئياً";
+          else if (code >= 45 && code <= 48) cond = "ضباب";
+          else if (code >= 51 && code <= 67) cond = "ممطر";
+          else if (code >= 71 && code <= 77) cond = "ثلوج";
+          else if (code >= 80 && code <= 82) cond = "زخات مطر";
+          else if (code >= 95) cond = "عاصفة رعدية";
+
+          setWeatherData({
+            temp: Math.round(data.current.temperature_2m),
+            humidity: Math.round(data.current.relative_humidity_2m),
+            condition: cond
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching weather:", error);
+      }
+    }
+    fetchWeather();
+    const interval = setInterval(fetchWeather, 600000); 
+    return () => clearInterval(interval);
+  }, []);
 
   // Navigation scaffold
   const [page, setPage] = useState("dashboard");
-  // dashboard | temp | airHumidity | soilMoisture | irrigation | recs | weather | profile | settings
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSensorsPopup, setShowSensorsPopup] = useState(false);
 
@@ -118,8 +151,11 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
           المستخدم اسمه ${userFullName || 'مستخدم'}.
           بيانات المحمية الحالية:
           - اسم المحمية: محمية الخضروات
-          - درجة الحرارة: 31°C (أعلى من المثالي 22-28°C)
-          - رطوبة الهواء: 58% (ضمن النطاق المثالي)
+          - درجة الحرارة الخارجية: ${weatherData.temp}°C
+          - رطوبة الهواء الخارجية: ${weatherData.humidity}%
+          - حالة الجو: ${weatherData.condition}
+          - درجة الحرارة الداخلية (حساس): 31°C (أعلى من المثالي 22-28°C)
+          - رطوبة الهواء الداخلية (حساس): 58% (ضمن النطاق المثالي)
           - رطوبة التربة: 42% (ضمن النطاق المثالي)
           - معدل الري: 60% (متوسط)
           أجب باللغة العربية بشكل مختصر وواضح.`,
@@ -158,7 +194,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
               <div className="flex items-center gap-2 text-[15px] text-gray-500">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
                 <span>{T.farmTemp}</span>
-                <span className="font-bold text-[#ea580c]">31°C</span>
+                <span className="font-bold text-[#ea580c]">{weatherData.temp}°C</span>
               </div>
               <div className="w-px h-4 bg-gray-100" />
               <div className="text-[15px] text-gray-400">
@@ -260,7 +296,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
           {/* ================= Body with Persistent Sidebar ================= */}
           <main className="flex-1 min-h-0 flex">
             {/* Sidebar — always visible */}
-            <Sidebar currentPage={page} onGo={go} T={T} />
+            <Sidebar currentPage={page} onGo={go} T={T} weatherData={weatherData} />
 
             {/* Content Area */}
             <div className="flex-1 min-h-0 overflow-auto">

@@ -1,9 +1,10 @@
 import { CardShell, CardTopRow, TempSunIcon, AirHumidityIcon, SoilDropIcon } from './dashboardShared';
 import { Donut } from './dashboardCharts';
+import { CameraCard } from './CameraCard';
 
 export function DashboardHome({ onGo, onSendAI }) {
   return (
-    <div className="w-full h-full overflow-auto p-6 min-h-0">
+    <div className="w-full h-full overflow-auto p-6 min-h-0 page-enter">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">
 
         {/* Page Header */}
@@ -22,14 +23,25 @@ export function DashboardHome({ onGo, onSendAI }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-5 items-stretch">
-          <div className="animate-fade-in-up delay-1 h-full"><TemperatureCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-2 h-full"><AirHumidityCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-3 h-full"><SoilMoistureCard onGo={onGo} /></div>
+        {/* Main Content Layout */}
+        <div className="flex flex-col lg:flex-row gap-5 items-stretch">
+          {/* Right Column: Camera (Larger) */}
+          <div className="w-full lg:w-[420px] shrink-0 animate-fade-in-up">
+            <CameraCard />
+          </div>
+
+          {/* Left Column: Grid of Sensors */}
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+            <div className="animate-fade-in-up delay-1 h-full"><TemperatureCard onGo={onGo} /></div>
+            <div className="animate-fade-in-up delay-2 h-full"><AirHumidityCard onGo={onGo} /></div>
+            <div className="animate-fade-in-up delay-3 h-full"><SoilMoistureCard onGo={onGo} /></div>
+            <div className="animate-fade-in-up delay-4 h-full"><IrrigationCard onGo={onGo} /></div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-5 items-stretch">
-          <div className="animate-fade-in-up delay-4 h-full"><RecommendationsCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-5 h-full"><IrrigationCard onGo={onGo} /></div>
+
+        {/* Bottom Section: Recommendations (Full Width) */}
+        <div className="animate-fade-in-up delay-5">
+          <RecommendationsCard onGo={onGo} />
         </div>
       </div>
     </div>
@@ -59,7 +71,7 @@ function SoilMoistureCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, value));
 
   return (
-    <CardShell className="p-10">
+    <CardShell className="p-6">
       <CardTopRow
         title=" التربة"
         subtitle="آخر تحديث: قبل 5 دقائق"
@@ -119,7 +131,7 @@ function AirHumidityCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, value));
 
   return (
-    <CardShell className="p-10">
+    <CardShell className="p-6">
       <CardTopRow
         title="رطوبة الهواء"
         subtitle="آخر تحديث: قبل 5 دقائق"
@@ -179,7 +191,7 @@ function TemperatureCard({ onGo }) {
   const fill = Math.max(0, Math.min(100, ((value - 10) / (45 - 10)) * 100));
 
   return (
-    <CardShell className="p-10">
+    <CardShell className="p-6">
       <CardTopRow
         title="درجة الحرارة"
         subtitle="آخر تحديث: قبل 5 دقائق"
@@ -232,7 +244,7 @@ function IrrigationCard({ onGo }) {
     level === "90%" ? "مرتفع" : level === "متوسط" ? "60%" : "30%";
 
   return (
-    <CardShell className="p-10">
+    <CardShell className="p-6">
       <CardTopRow
         title="حالة الري اليوم"
         subtitle="آخر تحديث: قبل 10 دقائق"
@@ -281,7 +293,7 @@ function RecommendationsCard({ onGo }) {
   ];
 
   return (
-    <CardShell className="p-10">
+    <CardShell className="p-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="text-right">

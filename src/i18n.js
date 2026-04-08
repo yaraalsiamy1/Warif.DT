@@ -90,7 +90,7 @@ export const translations = {
     skipAndEnter: 'تخطي والدخول',
 
     // Dashboard Header
-    farmTemp: 'حرارة المحمية',
+    farmTemp: 'محيط المزرعة',
     lastUpdate: 'آخر تحديث',
     highTemp: 'حرارة مرتفعة',
     sensorsConnected: 'حساسات متصلة',

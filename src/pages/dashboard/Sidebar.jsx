@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export function Sidebar({ currentPage, onGo, T }) {
+export function Sidebar({ currentPage, onGo, T, weatherData }) {
   const [activeFarm, setActiveFarm] = useState(0);
   const quickMenu = [
     { label: T.recommendations, icon: "recs", page: "recs", badge: "2" },
@@ -48,9 +48,15 @@ export function Sidebar({ currentPage, onGo, T }) {
       {/* الطقس */}
       <div className="p-3 border-t border-gray-50">
         <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-3.5 border border-gray-100/50">
-          <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg> مكة المكرمة</div>
-          <div className="text-lg font-bold text-gray-800">31°C</div>
-          <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
+          <div className="text-xs text-gray-400 mb-1 flex items-center gap-1">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="5" />
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg> 
+            مكة المكرمة - مخطط الهدا
+          </div>
+          <div className="text-lg font-bold text-gray-800">{weatherData?.temp || 31}°C</div>
+          <div className="text-xs text-gray-400 mt-0.5">{weatherData?.condition || "مشمس"} — رطوبة {weatherData?.humidity || 45}%</div>
         </div>
       </div>
     </div>
