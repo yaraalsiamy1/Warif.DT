@@ -268,13 +268,31 @@ function sensorBuildRecommendationsHumidity(current) {
 }
 
 function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
-  if (soilTemp > 30) {
-    return "High temperature";
+  const rec = [];
+  if (soilMoist <= 25) {
+    rec.push(
+      "رطوبة التربة منخفضة: يوصى بزيادة الري تدريجيًا ومراقبة الاستجابة خلال 24 ساعة."
+    );
+  } else if (soilMoist >= 60) {
+    rec.push(
+      "رطوبة التربة مرتفعة: قلل الري وتأكد من التصريف لتفادي تعفن الجذور."
+    );
+  } else {
+    rec.push("رطوبة التربة جيدة: حافظ على الجدول الحالي مع مراجعة أسبوعية.");
   }
-
-  if (soilMoist < 20) {
-    return "Low moisture";
-  }
-
-  return "Normal conditions";
+  return rec;
 }
+
+export {
+  irrigationClamp,
+  irrigationDaysInMonth,
+  generateIrrigationUsageSeries,
+  sensorDaysInMonth,
+  sensorGenerateLineSeries,
+  sensorBuildRecommendationsTemperature,
+  sensorBuildRecommendationsHumidity,
+  sensorBuildRecommendationsSoil,
+  sensorMakeMonthOptionsAr,
+  sensorGetUpdateText,
+  sensorIsFutureMonth,
+};

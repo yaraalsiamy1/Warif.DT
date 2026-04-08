@@ -1,7 +1,7 @@
 import { CardShell, CardTopRow, TempSunIcon, AirHumidityIcon, SoilDropIcon } from './dashboardShared';
 import { Donut } from './dashboardCharts';
 
-function DashboardHome({ onGo, onSendAI }) {
+export function DashboardHome({ onGo, onSendAI }) {
   return (
     <div className="w-full h-full overflow-auto p-6 min-h-0">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function Sidebar({ currentPage, onGo, T }) {
+export function Sidebar({ currentPage, onGo, T }) {
   const [activeFarm, setActiveFarm] = useState(0);
   const quickMenu = [
     { label: T.recommendations, icon: "recs", page: "recs", badge: "2" },

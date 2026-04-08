@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react';
+
 function CardShell({ children, className = "" }) {
   return (
     <section
@@ -25,6 +27,165 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel = "التفاصي
         {detailsLabel} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
       </button>
     </div>
+  );
+}
+
+function TempSunIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" fill="#FDE68A" />
+      <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+    </svg>
+  );
+}
+
+function AirHumidityIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F766E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21c4.97-4.97 7-8.94 7-12.76A7 7 0 0 0 5 8.24c0 3.82 2.03 7.79 7 12.76z" />
+      <path d="M12 8.5a2.5 2.5 0 1 1 0 5" />
+    </svg>
+  );
+}
+
+function SoilDropIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3.5c0 0-6 5.5-6 9.5a6 6 0 0 0 12 0c0-4-6-9.5-6-9.5z" />
+      <path d="M12 14.5a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
+    </svg>
+  );
+}
+
+function GaugeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12a8 8 0 0 1 16 0" />
+      <path d="M12 12l4-4" />
+      <circle cx="12" cy="12" r="1.5" fill="#2563EB" />
+    </svg>
+  );
+}
+
+function DropBadgeIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F766E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+      <circle cx="12" cy="14" r="2" fill="#0F766E" />
+    </svg>
+  );
+}
+
+function Account_Card({ children }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      {children}
+    </div>
+  );
+}
+
+function Account_EditableField({ label, value, onEdit, mono }) {
+  return (
+    <div className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-200">
+      <div className="text-right">
+        <div className="text-sm text-gray-500">{label}</div>
+        <div className={`text-sm font-medium ${mono ? 'font-mono' : ''}`}>{value}</div>
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-sm font-semibold text-[#2E7D32] hover:text-[#1B5E20] transition-colors duration-200"
+      >
+        تعديل
+      </button>
+    </div>
+  );
+}
+
+function Account_ListRow({ icon, title, subtitle, right }) {
+  return (
+    <div className="flex items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-gray-200">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-2xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0">
+          {icon}
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-semibold text-gray-800">{title}</div>
+          <div className="text-xs text-gray-500">{subtitle}</div>
+        </div>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function Account_IconButton({ children, title, onClick, danger }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`w-10 h-10 rounded-2xl border transition flex items-center justify-center ${danger ? 'bg-[#FEE2E2] border-[#FECACA] text-[#B91C1C]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Account_ModalShell({ children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+      <div className="relative w-full max-w-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 left-3 p-2 rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-gray-700"
+        >
+          ×
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Account_PencilIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
+
+function Account_TrashIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
+
+function Account_PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function Account_SensorIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 7v-3" />
+    </svg>
   );
 }
 
@@ -1397,5 +1558,26 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
       {children}
     </button>
   );
-}      
-      
+}
+
+export {
+  CardShell,
+  CardTopRow,
+  TempSunIcon,
+  AirHumidityIcon,
+  SoilDropIcon,
+  GaugeIcon,
+  DropBadgeIcon,
+  SensorTopBar,
+  SensorPill,
+  SensorPrimaryButton,
+  Account_Card,
+  Account_EditableField,
+  Account_ListRow,
+  Account_IconButton,
+  Account_ModalShell,
+  Account_PencilIcon,
+  Account_TrashIcon,
+  Account_PlusIcon,
+  Account_SensorIcon,
+};

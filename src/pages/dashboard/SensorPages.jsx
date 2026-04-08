@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { SensorTopBar, CardShell, SensorPill, SensorPrimaryButton } from './dashboardShared';
-import { SensorBarChart2D } from './dashboardCharts';
-import { sensorDaysInMonth, sensorGenerateLineSeries, sensorIsFutureMonth, sensorBuildRecommendationsTemperature, sensorBuildRecommendationsHumidity, sensorBuildRecommendationsSoil } from './dashboardUtils';
+import { SensorTopBar, CardShell, SensorPill, SensorPrimaryButton, TempSunIcon, AirHumidityIcon, SoilDropIcon, GaugeIcon, DropBadgeIcon } from './dashboardShared';
+import { SensorBarChart2D, IrrigationActionButton } from './dashboardCharts';
+import { sensorDaysInMonth, sensorGenerateLineSeries, sensorIsFutureMonth, sensorBuildRecommendationsTemperature, sensorBuildRecommendationsHumidity, sensorBuildRecommendationsSoil, sensorMakeMonthOptionsAr, sensorGetUpdateText } from './dashboardUtils';
 
-function TemperaturePage({ onBack }) {
+export function TemperaturePage({ onBack }) {
   const [month, setMonth] = useState(new Date().getMonth());
   const months = sensorMakeMonthOptionsAr();
   const [activeAction, setActiveAction] = useState("cooling");
@@ -144,7 +144,7 @@ function TemperaturePage({ onBack }) {
 }
 
 
-function AirHumidityPage({ onBack }) {
+export function AirHumidityPage({ onBack }) {
   const [month, setMonth] = useState(new Date().getMonth());
   const months = sensorMakeMonthOptionsAr();
   const [activeAction, setActiveAction] = useState("cooling");
@@ -285,7 +285,7 @@ function AirHumidityPage({ onBack }) {
 }
 
 
-function SoilMoisturePage({ onBack }) {
+export function SoilMoisturePage({ onBack }) {
   const [month, setMonth] = useState(new Date().getMonth());
   const months = sensorMakeMonthOptionsAr();
 

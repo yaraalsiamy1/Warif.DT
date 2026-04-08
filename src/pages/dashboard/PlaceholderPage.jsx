@@ -1,4 +1,4 @@
-function PlaceholderPage({ page, onBack }) {
+export function PlaceholderPage({ page, onBack }) {
   const titleMap = {
     temp: "تفاصيل درجة الحرارة",
     airHumidity: "تفاصيل رطوبة الهواء",

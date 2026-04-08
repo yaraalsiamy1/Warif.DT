@@ -3,7 +3,7 @@ import { SensorTopBar, CardShell } from './dashboardShared';
 import { IrrigationActionButton, IrrigationDonut, IrrigationBarChart2D } from './dashboardCharts';
 import { irrigationDaysInMonth, generateIrrigationUsageSeries } from './dashboardUtils';
 
-function IrrigationPage({ onBack, mode }) {
+export function IrrigationPage({ onBack, mode }) {
   const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
   const currentMonthIdx = new Date().getMonth();
 

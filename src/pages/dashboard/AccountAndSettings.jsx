@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Account_Card, Account_EditableField, Account_ListRow, Account_IconButton, Account_ModalShell, Account_PencilIcon, Account_TrashIcon, Account_PlusIcon, Account_SensorIcon } from './dashboardShared';
 
-function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, onNameUpdate, language, onLanguageChange, sensors: propSensors, onSensorsChange }) {
+export function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, onNameUpdate, language, onLanguageChange, sensors: propSensors, onSensorsChange }) {
 
   const [page, setPage] = useState(initialPage);
 

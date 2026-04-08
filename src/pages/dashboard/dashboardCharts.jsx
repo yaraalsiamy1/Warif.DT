@@ -844,6 +844,54 @@ function IrrigationBarChart2D({ data, yLabel, unit }) {
   );
 }
 
+function SensorBarChart2D({ data, yLabel, unit }) {
+  const width = 760;
+  const height = 240;
+  const padding = 36;
+  const values = data.map((d) => d.value);
+  const minValue = Math.min(...values, 0);
+  const maxValue = Math.max(...values, 100);
+  const xStep = (width - padding * 2) / Math.max(data.length - 1, 1);
+  const yScale = (value) => height - padding - ((value - minValue) / (maxValue - minValue || 1)) * (height - padding * 2);
+
+  return (
+    <div className="w-full overflow-auto">
+      <svg width={width} height={height} className="block">
+        <rect x="0" y="0" width={width} height={height} fill="white" />
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="#E5E7EB" />
+        <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="#E5E7EB" />
+        {data.map((item, index) => {
+          const x = padding + index * xStep;
+          const y = yScale(item.value);
+          return (
+            <g key={item.day}>
+              <rect x={x - 6} y={y} width={12} height={height - padding - y} rx="4" fill="#4F46E5" />
+              {index % 2 === 0 && (
+                <text x={x} y={height - padding + 14} fontSize="10" fill="#6B7280" textAnchor="middle">
+                  {item.day}
+                </text>
+              )}
+            </g>
+          );
+        })}
+        <text x={width - padding} y={padding - 10} fontSize="11" fill="#374151" textAnchor="end">
+          {yLabel} {unit ? `(${unit})` : ""}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+export {
+  Donut,
+  IrrigationActionButton,
+  IrrigationDonut,
+  IrrigationBarChart2D,
+  SensorBarChart2D,
+  irrigationDaysInMonth,
+  generateIrrigationUsageSeries,
+};
+
 
 /* =========================================================
    Sensor Detail Pages (Temperature / Air Humidity / Soil)

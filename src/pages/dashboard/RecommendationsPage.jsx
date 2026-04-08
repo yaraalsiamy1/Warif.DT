@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SensorTopBar, CardShell, TempSunIcon, AirHumidityIcon, SoilDropIcon } from './dashboardShared';
 
-function RecommendationsPage({ onBack }) {
+export function RecommendationsPage({ onBack }) {
   const items = useMemo(
     () => [
       {
