@@ -10,10 +10,25 @@ import { useMemo, useState, useEffect } from "react";
 
 export default function Dashboard({ onLogout }) {
   const [userFullName, setUserFullName] = useState('');
+  const [language, setLanguage] = useState('ar');
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
     if (saved.fullName) setUserFullName(saved.fullName);
+    if (saved.language) setLanguage(saved.language);
   }, []);
+
+  function handleNameUpdate(newName) {
+    setUserFullName(newName);
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    localStorage.setItem('warif_user', JSON.stringify({ ...saved, fullName: newName }));
+  }
+
+  function handleLanguageChange(lang) {
+    setLanguage(lang);
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    localStorage.setItem('warif_user', JSON.stringify({ ...saved, language: lang }));
+  }
 
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -27,6 +42,13 @@ export default function Dashboard({ onLogout }) {
   const [page, setPage] = useState("dashboard");
   // dashboard | temp | airHumidity | soilMoisture | irrigation | recs | weather | profile | settings
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSensorsPopup, setShowSensorsPopup] = useState(false);
+
+  const connectedSensors = [
+    { id: "S1", name: "حساس التربة",    type: "رطوبة التربة",   value: "42%",  status: "normal" },
+    { id: "S2", name: "حساس الحرارة",  type: "درجة الحرارة",   value: "31°C", status: "warning" },
+    { id: "S3", name: "حساس الرطوبة",  type: "رطوبة الهواء",   value: "58%",  status: "normal" },
+  ];
 
   const go = (to) => setPage(to);
 
@@ -84,41 +106,69 @@ export default function Dashboard({ onLogout }) {
       <div className="w-full h-full flex flex-col">
         {/* ================= Header ================= */}
         <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-5 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
-          {/* Right: Logo + Temp + Time */}
+          {/* Right: Temp + Time */}
           <div className="flex items-center gap-4">
             <div className="w-px h-4 bg-gray-100" />
-            <div className="flex items-center gap-1.5 text-sm text-gray-500">
+            <div className="flex items-center gap-1.5 text-[15px] text-gray-500">
               <span>درجة الحرارة</span>
               <span className="font-semibold text-[#ea580c]">31°C</span>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
             </div>
             <div className="w-px h-4 bg-gray-100" />
-            <div className="text-sm text-gray-400">
+            <div className="text-[15px] text-gray-400">
               آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
 
-          {/* Left: Irrigation mode + alerts + user */}
-
+          {/* Left: alerts + sensors + irrigation toggle + user */}
           <div className="flex items-center gap-3">
+
             {/* Alert */}
-            <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c] animate-pulse" />
+            <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
+              <span className="w-2 h-2 rounded-full bg-[#ea580c] animate-pulse" />
               حرارة مرتفعة
             </div>
 
-            {/* Connected sensors */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
-              3 حساسات متصلة
+            {/* Connected sensors — clickable */}
+            <div className="relative" data-sensors-popup>
+              <button
+                onClick={() => setShowSensorsPopup(v => !v)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+                {connectedSensors.length} حساسات متصلة
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-300 ${showSensorsPopup ? 'rotate-180' : ''}`}><path d="M19 9l-7 7-7-7" /></svg>
+              </button>
+
+              {showSensorsPopup && (
+                <div className="absolute top-full mt-2 right-0 w-64 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top right' }}>
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <div className="text-sm font-semibold text-gray-800">الحساسات المتصلة</div>
+                    <div className="text-[13px] text-gray-400 mt-0.5">آخر تحديث قبل 5 دقائق</div>
+                  </div>
+                  <div className="py-1">
+                    {connectedSensors.map((s) => (
+                      <div key={s.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c]' : 'bg-[#16a34a]'}`} />
+                          <div>
+                            <div className="text-sm font-medium text-gray-800">{s.name}</div>
+                            <div className="text-[12px] text-gray-400">{s.type}</div>
+                          </div>
+                        </div>
+                        <span className={`text-sm font-semibold ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-
             {/* Irrigation toggle */}
-            <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '110px' }}>
+            <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '120px' }}>
               <button
                 onClick={() => setMode("auto")}
-                className={`flex-1 py-1 text-center text-xs font-medium transition-all ${mode === "auto"
+                className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "auto"
                     ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
                     : "text-gray-400"
                   }`}
@@ -127,7 +177,7 @@ export default function Dashboard({ onLogout }) {
               </button>
               <button
                 onClick={() => setMode("manual")}
-                className={`flex-1 py-1 text-center text-xs font-medium transition-all ${mode === "manual"
+                className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "manual"
                     ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
                     : "text-gray-400"
                   }`}
@@ -140,7 +190,7 @@ export default function Dashboard({ onLogout }) {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-s text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
               >
                 <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -191,9 +241,9 @@ export default function Dashboard({ onLogout }) {
             ) : page === "soilMoisture" ? (
               <SoilMoisturePage onBack={() => go("dashboard")} />
             ) : page === "profile" ? (
-              <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} />
+              <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
             ) : page === "settings" ? (
-              <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} />
+              <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
             ) : (
               <PlaceholderPage page={page} onBack={() => go("dashboard")} />
             )}
@@ -327,14 +377,31 @@ function DashboardHome({ onGo, onSendAI }) {
   return (
     <div className="w-full h-full overflow-auto p-6 min-h-0">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">
-        <div className="grid grid-cols-3 gap-5">
-          <div className="animate-fade-in-up delay-1"><TemperatureCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-2"><AirHumidityCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-3"><SoilMoistureCard onGo={onGo} /></div>
+
+        {/* Page Header */}
+        <div className="flex items-center gap-3 animate-fade-in-down">
+          <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" />
+            </svg>
+          </div>
+          <div className="text-right">
+            <div className="text-xl font-bold text-gray-800">نظرة عامة</div>
+            <div className="text-sm text-gray-500">ملخص حالة المحمية والحساسات</div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-5">
-          <div className="animate-fade-in-up delay-4"><RecommendationsCard onGo={onGo} /></div>
-          <div className="animate-fade-in-up delay-5"><IrrigationCard onGo={onGo} /></div>
+
+        <div className="grid grid-cols-3 gap-5 items-stretch">
+          <div className="animate-fade-in-up delay-1 h-full"><TemperatureCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-2 h-full"><AirHumidityCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-3 h-full"><SoilMoistureCard onGo={onGo} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-5 items-stretch">
+          <div className="animate-fade-in-up delay-4 h-full"><RecommendationsCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-5 h-full"><IrrigationCard onGo={onGo} /></div>
         </div>
       </div>
     </div>
@@ -348,7 +415,7 @@ function DashboardHome({ onGo, onSendAI }) {
 function CardShell({ children, className = "" }) {
   return (
     <section
-      className={`bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100/80 card-hover ${className}`}
+      className={`bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100/80 card-hover h-full flex flex-col ${className}`}
       style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}
     >
       {children}
@@ -361,13 +428,13 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel = "التفاصي
     <div className="flex items-start justify-between gap-3">
       <div className="text-right">
         {/* عنوان الكارد (درجة الحرارة، رطوبة التربة، رطوبة الهواء) */}
-        <div className="text-[20px] font-semibold text-gray-800">{title}</div>
-        {subtitle && <div className="text-sl text-gray-400 mt-1">{subtitle}</div>}
+        <div className="text-xl font-bold text-gray-800">{title}</div>
+        {subtitle && <div className="text-[13px] text-gray-400 mt-1">{subtitle}</div>}
       </div>
       <button
         type="button"
         onClick={onDetails}
-        className="text-xs text-[#16a34a] bg-[#f0fdf4] px-3 py-1.5 rounded-xl hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 shrink-0 font-semibold group"
+        className="text-xs text-[#2E7D32] bg-[#E8F5E9] px-3 py-1.5 rounded-xl hover:bg-[#C8E6C9] hover:shadow-sm transition-all duration-300 shrink-0 font-semibold group"
       >
         {detailsLabel} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
       </button>
@@ -407,8 +474,8 @@ function SoilMoistureCard({ onGo }) {
       <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
-            <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-s">%</span>
+            <span className="text-4xl font-bold">{value}</span>
+            <span className="text-sm">%</span>
           </div>
         </div>
 
@@ -466,8 +533,8 @@ function AirHumidityCard({ onGo }) {
       <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
-            <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-s">%</span>
+            <span className="text-4xl font-bold">{value}</span>
+            <span className="text-sm">%</span>
           </div>
         </div>
 
@@ -525,8 +592,8 @@ function TemperatureCard({ onGo }) {
       <div className="mt-12 flex items-center justify-between gap-3">
         <div className="text-right" style={{ color }}>
           <div className="flex items-baseline gap-1 justify-end">
-            <span className="text-3xl font-semibold">{value}</span>
-            <span className="text-xl">°C</span>
+            <span className="text-4xl font-bold">{value}</span>
+            <span className="text-sm">°C</span>
           </div>
         </div>
 
@@ -567,22 +634,21 @@ function IrrigationCard({ onGo }) {
     level === "90%" ? "مرتفع" : level === "متوسط" ? "60%" : "30%";
 
   return (
-    <CardShell className="p-5">
+    <CardShell className="p-10">
       <CardTopRow
         title="حالة الري اليوم"
         subtitle="آخر تحديث: قبل 10 دقائق"
         onDetails={() => onGo("irrigation")}
       />
 
-      <div className="mt-15 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center mt-4">
         <Donut value={percent} />
+        <div className="mt-4 text-center text-sm text-gray-700">
+          معدل الري
+        </div>
       </div>
 
-      <div className="mt-5 text-center text-sm text-gray-700">
-        معدل الري
-      </div>
-
-      <div className="mt-3">
+      <div className="mt-4">
         <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
           <div className="h-full bg-[#EF6C00]" style={{ width: barWidth }} />
         </div>
@@ -620,8 +686,8 @@ function RecommendationsCard({ onGo }) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="text-right">
-          <div className="text-xl font-semibold text-gray-800">التوصيات</div>
-          <div className="text-s text-gray-500 mt-1">
+          <div className="text-xl font-bold text-gray-800">التوصيات</div>
+          <div className="text-[13px] text-gray-500 mt-1">
             أحدث التوصيات المقترحة
           </div>
         </div>
@@ -636,7 +702,7 @@ function RecommendationsCard({ onGo }) {
       </div>
 
       {/* Recommendations list (2 فقط) */}
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4 flex-1 flex flex-col gap-3">
         {latest.map((item) => (
           <div
             key={item.id}
@@ -676,7 +742,7 @@ function PlaceholderPage({ page, onBack }) {
       <div className="w-full max-w-5xl mx-auto">
         <div className="flex items-center justify-between">
           <div className="text-right">
-            <div className="text-lg font-semibold text-gray-800">{title}</div>
+            <div className="text-xl font-bold text-gray-800">{title}</div>
             <div className="text-[13px] text-gray-500 mt-1">
               Placeholder — سيتم تصميم الصفحة وربطها لاحقًا.
             </div>
@@ -685,7 +751,7 @@ function PlaceholderPage({ page, onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
           >
             <ArrowLeftIcon />
             رجوع
@@ -895,7 +961,7 @@ function RecommendationsPage({ onBack }) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="text-right">
-            <div className="text-lg font-semibold text-gray-800">التوصيات</div>
+            <div className="text-xl font-bold text-gray-800">التوصيات</div>
             <div className="text-[13px] text-gray-500 mt-1">
               جميع التوصيات المقترحة
             </div>
@@ -904,7 +970,7 @@ function RecommendationsPage({ onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
           >
             <ArrowLeftIcon />
             رجوع
@@ -912,7 +978,7 @@ function RecommendationsPage({ onBack }) {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center justify-between gap-3">
+        <CardShell className="p-4 flex items-center justify-between gap-3">
           <div className="text-sm text-gray-700">عرض حسب:</div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -944,10 +1010,10 @@ function RecommendationsPage({ onBack }) {
               رطوبة
             </button>
           </div>
-        </div>
+        </CardShell>
 
         {/* List */}
-        <div className="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+        <CardShell className="overflow-hidden">
           {filteredItems.length === 0 ? (
             <div className="p-6 text-sm text-gray-700 text-right">
               لا توجد توصيات ضمن هذا التصنيف حاليًا.
@@ -980,7 +1046,6 @@ function RecommendationsPage({ onBack }) {
                       </span>
                     </div>
 
-                    {/* بدل truncate */}
                     <div className="text-[12px] text-gray-600 mt-1">
                       {it.desc}
                     </div>
@@ -990,16 +1055,14 @@ function RecommendationsPage({ onBack }) {
                 <button
                   type="button"
                   className="px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 shrink-0"
-                  onClick={() => {
-                    // لاحقًا: افتحي صفحة/نافذة تفاصيل للتوصية
-                  }}
+                  onClick={() => {}}
                 >
                   تفاصيل
                 </button>
               </div>
             ))
           )}
-        </div>
+        </CardShell>
 
         {/* Footer */}
         <div className="flex justify-end">
@@ -1064,7 +1127,7 @@ function IrrigationPage({ onBack }) {
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-right">
-            <div className="text-lg font-semibold text-gray-800">
+            <div className="text-xl font-bold text-gray-800">
               تفاصيل حالة الري
             </div>
             <div className="text-[13px] text-gray-500 mt-1">
@@ -1075,15 +1138,15 @@ function IrrigationPage({ onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
           >
-            <IrrigationArrowLeftIcon />
+            <ArrowLeftIcon />
             رجوع
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <IrrigationCardShell className="p-5">
+          <CardShell className="p-5">
             <div className="text-right">
               <div className="text-[16px] font-semibold text-gray-800">
                 معدل الري اليوم
@@ -1098,9 +1161,9 @@ function IrrigationPage({ onBack }) {
             <div className="mt-2 text-center text-[12px] text-gray-700">
               معدل الري % {Math.round(current)}
             </div>{" "}
-          </IrrigationCardShell>
+          </CardShell>
 
-          <IrrigationCardShell className="p-5">
+          <CardShell className="p-5">
             <div className="text-right">
               <div className="text-[16px] font-semibold text-gray-800">التحكم </div>
               <div className="text-[13px] text-gray-500 mt-1"></div>
@@ -1123,9 +1186,9 @@ function IrrigationPage({ onBack }) {
                 onClick={() => setActiveAction("إيقاف الري")}
               />
             </div>
-          </IrrigationCardShell>
+          </CardShell>
 
-          <IrrigationCardShell className="p-5">
+          <CardShell className="p-5">
             <div className="text-right">
               <div className="text-[16px] font-semibold text-gray-800">
                 التوصيات
@@ -1143,10 +1206,10 @@ function IrrigationPage({ onBack }) {
                 </li>
               </ul>
             </div>
-          </IrrigationCardShell>
+          </CardShell>
         </div>
 
-        <IrrigationCardShell className="p-5">
+        <CardShell className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
               <div className="text-[16px] font-semibold text-gray-800">
@@ -1181,21 +1244,12 @@ function IrrigationPage({ onBack }) {
               unit="%"
             />
           </div>
-        </IrrigationCardShell>
+        </CardShell>
       </div>
     </div>
   );
 }
 
-function IrrigationCardShell({ children, className = "" }) {
-  return (
-    <section
-      className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/80 card-hover ${className}`}
-    >
-      {children}
-    </section>
-  );
-}
 
 function IrrigationActionButton({ label, active, onClick }) {
   return (
@@ -1423,22 +1477,6 @@ function IrrigationBarChart2D({ data, yLabel, unit }) {
   );
 }
 
-function IrrigationArrowLeftIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#374151"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  );
-}
 
 /* =========================================================
    Sensor Detail Pages (Temperature / Air Humidity / Soil)
@@ -1602,20 +1640,6 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
   );
 }
 
-function SensorSecondaryButton({ children, onClick, active = false }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${active
-          ? "bg-[#2E7D32] text-white border-[#2E7D32]"
-          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-        }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function SensorBarChart2D({ data, yLabel, unit }) {
   const pad = 36;
@@ -1650,7 +1674,7 @@ function SensorBarChart2D({ data, yLabel, unit }) {
 
   return (
     <div className="w-full">
-      {/* ✅ توسيط الرسم بدون سكرول */}
+      {/* توسيط الرسم بدون سكرول */}
       <div className="mt-3 w-full flex justify-center">
         <div className="overflow-hidden">
           <svg width={w} height={h} className="block">
@@ -1733,7 +1757,7 @@ function SensorBarChart2D({ data, yLabel, unit }) {
         </div>
       </div>
 
-      {/* ✅ Legend تحت الرسم بالمنتصف */}
+      {/* Legend تحت الرسم بالمنتصف */}
       <div className="mt-3 text-center text-[11px] text-gray-500">
         الألوان تعبّر عن مستوى الرطوبة.
       </div>
@@ -1835,12 +1859,12 @@ function TemperaturePage({ onBack }) {
                 التحكم بالتبريد
               </SensorPrimaryButton>
 
-              <SensorSecondaryButton
+              <SensorPrimaryButton
                 active={activeAction === "vent"}
                 onClick={() => setActiveAction("vent")}
               >
                 التحكم بالتهوية
-              </SensorSecondaryButton>
+              </SensorPrimaryButton>
             </div>
           </CardShell>
 
@@ -1964,12 +1988,12 @@ function AirHumidityPage({ onBack }) {
                 التحكم بالتبريد
               </SensorPrimaryButton>
 
-              <SensorSecondaryButton
+              <SensorPrimaryButton
                 active={activeAction === "vent"}
                 onClick={() => setActiveAction("vent")}
               >
                 التحكم بالتهوية
-              </SensorSecondaryButton>
+              </SensorPrimaryButton>
             </div>
           </CardShell>
 
@@ -2211,14 +2235,12 @@ function SoilMoisturePage({ onBack }) {
 }
 
 /* =========================================================
-   Account + Settings (Integrated as-is; only added initialPage prop)
+   Account + Settings
 ========================================================= */
 
-function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) {
+function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, onNameUpdate, language, onLanguageChange }) {
 
-  const [page, setPage] = useState("dashboard");
-  const go = (to) => setPage(to);
-
+  const [page, setPage] = useState(initialPage);
 
   const savedUser = JSON.parse(localStorage.getItem('warif_user') || '{}');
   const [profile, setProfile] = useState({
@@ -2228,10 +2250,8 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
     password: "********",
   });
 
-  const [editingField, setEditingField] = useState(null); // "username" | "email" | "password" | null
+  const [editingField, setEditingField] = useState(null);
   const [draftValue, setDraftValue] = useState("");
-
-  const [language, setLanguage] = useState("ar"); // "ar" | "en"
 
   const sensorMap = {
     temp: { name: "حساس الحرارة", type: "درجة الحرارة" },
@@ -2257,65 +2277,6 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
     type: "",
   });
 
-  const dir = language === "ar" ? "rtl" : "ltr";
-
-  const t = useMemo(() => {
-    const ar = {
-      app: "وارِف",
-      profile: "الحساب الشخصي",
-      settings: "الإعدادات",
-      back: "رجوع",
-      save: "حفظ",
-      cancel: "إلغاء",
-      edit: "تعديل",
-      updated: "تم التحديث",
-      username: "اسم المستخدم",
-      email: "البريد الإلكتروني",
-      password: "كلمة المرور",
-      language: "اللغة",
-      arabic: "عربي",
-      english: "English",
-      sensors: "الحساسات",
-      addSensor: "إضافة حساس",
-      sensorName: "اسم الحساس",
-      sensorType: "نوع الحساس",
-      delete: "حذف",
-      userGuide: "دليل المستخدم",
-      logout: "تسجيل الخروج",
-      confirmDelete: "هل تريد حذف هذا الحساس؟",
-      openGuide: "فتح الدليل",
-      actionDone: "تم",
-    };
-
-    const en = {
-      app: "WARIF",
-      profile: "Profile",
-      settings: "Settings",
-      back: "Back",
-      save: "Save",
-      cancel: "Cancel",
-      edit: "Edit",
-      updated: "Updated",
-      username: "Username",
-      email: "Email",
-      password: "Password",
-      language: "Language",
-      arabic: "Arabic",
-      english: "English",
-      sensors: "Sensors",
-      addSensor: "Add Sensor",
-      sensorName: "Sensor Name",
-      sensorType: "Sensor Type",
-      delete: "Delete",
-      userGuide: "User Guide",
-      logout: "Log out",
-      confirmDelete: "Delete this sensor?",
-      openGuide: "Open Guide",
-      actionDone: "Done",
-    };
-
-    return language === "ar" ? ar : en;
-  }, [language]);
 
   function openEdit(fieldKey) {
     setEditingField(fieldKey);
@@ -2329,10 +2290,16 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
 
   function saveEdit() {
     if (!editingField) return;
-    setProfile((p) => ({
-      ...p,
-      [editingField]: draftValue || p[editingField],
-    }));
+    const newValue = draftValue.trim() || profile[editingField];
+    setProfile((p) => ({ ...p, [editingField]: newValue }));
+
+    // حفظ في localStorage
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    localStorage.setItem('warif_user', JSON.stringify({ ...saved, [editingField]: newValue }));
+
+    // إبلاغ Dashboard بتحديث الاسم
+    if (editingField === 'fullName' && onNameUpdate) onNameUpdate(newValue);
+
     closeEdit();
   }
 
@@ -2384,142 +2351,151 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
   }
 
   function deleteSensor(id) {
-    const ok = confirm(t.confirmDelete);
+    const ok = confirm(language === 'ar' ? "هل تريد حذف هذا الحساس؟" : "Delete this sensor?");
     if (!ok) return;
     setSensors((arr) => arr.filter((s) => s.id !== id));
   }
 
+  const isRtl = language === 'ar';
+  const T = {
+    profile:        isRtl ? "الحساب الشخصي"       : "Profile",
+    settings:       isRtl ? "الإعدادات"            : "Settings",
+    profileSub:     isRtl ? "بياناتك الشخصية وتفاصيل حسابك" : "Your personal details and account info",
+    settingsSub:    isRtl ? "إدارة الحساسات وخيارات التطبيق" : "Manage sensors and app preferences",
+    back:           isRtl ? "رجوع"                : "Back",
+    accountData:    isRtl ? "بيانات الحساب"       : "Account Data",
+    fullName:       isRtl ? "الاسم الكامل"         : "Full Name",
+    username:       isRtl ? "اسم المستخدم"         : "Username",
+    email:          isRtl ? "البريد الإلكتروني"    : "Email",
+    password:       isRtl ? "كلمة المرور"          : "Password",
+    edit:           isRtl ? "تعديل"               : "Edit",
+    save:           isRtl ? "حفظ"                 : "Save",
+    cancel:         isRtl ? "إلغاء"               : "Cancel",
+    sensors:        isRtl ? "الحساسات"            : "Sensors",
+    sensorsSub:     isRtl ? "إدارة الحساسات المرتبطة بالمحمية" : "Manage greenhouse sensors",
+    addSensor:      isRtl ? "إضافة حساس"          : "Add Sensor",
+    sensorName:     isRtl ? "اسم الحساس"          : "Sensor Name",
+    sensorType:     isRtl ? "نوع الحساس"          : "Sensor Type",
+    noSensors:      isRtl ? "لا توجد حساسات مضافة" : "No sensors added",
+    language:       isRtl ? "اللغة"               : "Language",
+    account:        isRtl ? "الحساب"              : "Account",
+    userGuide:      isRtl ? "دليل المستخدم"       : "User Guide",
+    userGuideSub:   isRtl ? "شرح استخدام لوحة التحكم، التنبيهات، والاختصارات." : "How to use the dashboard, alerts, and shortcuts.",
+    openGuide:      isRtl ? "فتح الدليل"          : "Open Guide",
+    logout:         isRtl ? "تسجيل الخروج"        : "Log Out",
+    logoutSub:      isRtl ? "إنهاء الجلسة الحالية بأمان." : "Safely end your current session.",
+    logoutBtn:      isRtl ? "خروج"                : "Log Out",
+    editField:      isRtl ? "تعديل"               : "Edit",
+    addSensorTitle: isRtl ? "إضافة حساس"          : "Add Sensor",
+    editSensorTitle:isRtl ? "تعديل الحساس"        : "Edit Sensor",
+  };
+
   return (
     <div
-      className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
-      dir={dir}
+      className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic'] overflow-auto"
+      dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#2E7D32] transition-all"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
-            رجوع للداشبورد
+      <div className="w-full max-w-3xl mx-auto p-6 flex flex-col gap-5">
+
+        {/* Page Header */}
+        <div className="flex items-center justify-between animate-fade-in-down">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0">
+              {page === "profile"
+                ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg>
+                : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+              }
+            </div>
+            <div>
+              <div className="text-xl font-bold text-gray-800">
+                {page === "profile" ? T.profile : T.settings}
+              </div>
+              <div className="text-sm text-gray-500">
+                {page === "profile" ? T.profileSub : T.settingsSub}
+              </div>
+            </div>
+          </div>
+          <button type="button" onClick={onBack}
+            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium">
+            <ArrowLeftIcon />
+            {T.back}
           </button>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#F1F5F1] rounded-xl p-1">
-          <button
-            type="button"
-            onClick={() => setPage("profile")}
-            className={`px-4 py-2 rounded-lg text-sm transition ${page === "profile"
-                ? "bg-white shadow text-[#1B5E20] font-semibold"
-                : "text-gray-600 hover:text-gray-800"
-              }`}
-          >
-            {t.profile}
+        {/* Tab switcher */}
+        <div className="flex bg-white/80 border border-gray-100 rounded-2xl p-1 gap-1" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+          <button type="button" onClick={() => setPage("profile")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${page === "profile" ? "bg-[#E8F5E9] text-[#1B5E20] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg>
+            {T.profile}
           </button>
-          <button
-            type="button"
-            onClick={() => setPage("settings")}
-            className={`px-4 py-2 rounded-lg text-sm transition ${page === "settings"
-                ? "bg-white shadow text-[#1B5E20] font-semibold"
-                : "text-gray-600 hover:text-gray-800"
-              }`}
-          >
-            {t.settings}
+          <button type="button" onClick={() => setPage("settings")}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${page === "settings" ? "bg-[#E8F5E9] text-[#1B5E20] shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            {T.settings}
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] text-gray-600">{t.language}:</span>
-          <button
-            type="button"
-            onClick={() => setLanguage("ar")}
-            className={`px-3 py-1 rounded-lg text-xs border transition ${language === "ar"
-                ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]"
-                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-          >
-            {t.arabic}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLanguage("en")}
-            className={`px-3 py-1 rounded-lg text-xs border transition ${language === "en"
-                ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]"
-                : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-          >
-            {t.english}
-          </button>
+        {/* Content */}
+        <div className="page-enter">
+          {page === "profile" ? (
+            <Account_ProfilePage profile={profile} onEdit={openEdit} T={T} />
+          ) : (
+            <Account_SettingsPage
+              T={T}
+              language={language}
+              setLanguage={onLanguageChange}
+              sensors={sensors}
+              onAddSensor={openAddSensor}
+              onEditSensor={openEditSensor}
+              onDeleteSensor={deleteSensor}
+              onLogout={onLogout}
+            />
+          )}
         </div>
-      </header>
 
-      <main className="w-full h-[calc(100%-80px)] p-6 overflow-auto">
-        {page === "profile" ? (
-          <Account_ProfilePage t={t} profile={profile} onEdit={openEdit} />
-        ) : (
-          <Account_SettingsPage
-            t={t}
-            language={language}
-            setLanguage={setLanguage}
-            sensors={sensors}
-            onAddSensor={openAddSensor}
-            onEditSensor={openEditSensor}
-            onDeleteSensor={deleteSensor}
-            onLogout={onLogout}
-          />
-        )}
-      </main>
+      </div>
 
       {editingField && (
         <Account_ModalShell onClose={closeEdit}>
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[420px] max-w-[92vw] p-5 text-right animate-modal-in">
             <div className="flex items-center justify-between mb-4">
               <div className="text-[16px] font-semibold text-gray-800">
-                {t.edit}:{" "}
-                {editingField === "username"
-                  ? t.username
-                  : editingField === "email"
-                    ? t.email
-                    : t.password}
+                {T.edit}:{" "}
+                {editingField === "fullName" ? T.fullName
+                  : editingField === "username" ? T.username
+                  : editingField === "email" ? T.email
+                  : T.password}
               </div>
-              <button
-                type="button"
-                onClick={closeEdit}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                ✕
+              <button type="button" onClick={closeEdit}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
 
             <label className="block text-xs text-gray-600 mb-2">
-              {editingField === "username"
-                ? t.username
-                : editingField === "email"
-                  ? t.email
-                  : t.password}
+              {editingField === "fullName" ? T.fullName
+                : editingField === "username" ? T.username
+                : editingField === "email" ? T.email
+                : T.password}
             </label>
             <input
               value={draftValue}
               onChange={(e) => setDraftValue(e.target.value)}
               type={editingField === "password" ? "password" : "text"}
-              className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#43A047]"
+              className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2E7D32]"
               placeholder=""
+              autoFocus
             />
 
             <div className="flex items-center justify-end gap-2 mt-5">
-              <button
-                type="button"
-                onClick={closeEdit}
-                className="px-4 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                {t.cancel}
+              <button type="button" onClick={closeEdit}
+                className="px-4 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                {T.cancel}
               </button>
-              <button
-                type="button"
-                onClick={saveEdit}
-                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]"
-              >
-                {t.save}
+              <button type="button" onClick={saveEdit}
+                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]">
+                {T.save}
               </button>
             </div>
           </div>
@@ -2531,69 +2507,44 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[460px] max-w-[92vw] p-5 text-right animate-modal-in">
             <div className="flex items-center justify-between mb-4">
               <div className="text-[16px] font-semibold text-gray-800">
-                {sensorModal.mode === "add"
-                  ? t.addSensor
-                  : `${t.edit}: ${t.sensors}`}
+                {sensorModal.mode === "add" ? T.addSensorTitle : T.editSensorTitle}
               </div>
-              <button
-                type="button"
-                onClick={closeSensorModal}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                ✕
+              <button type="button" onClick={closeSensorModal}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-xs text-gray-600 mb-2">
-                  {t.sensorName}
-                </label>
+                <label className="block text-xs text-gray-600 mb-2">{T.sensorName}</label>
                 <input
                   value={sensorModal.name}
-                  onChange={(e) =>
-                    setSensorModal((m) => ({
-                      ...m,
-                      name: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#43A047]"
-                  placeholder={t.sensorName}
+                  onChange={(e) => setSensorModal((m) => ({ ...m, name: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2E7D32]"
+                  placeholder={T.sensorName}
+                  autoFocus
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-gray-600 mb-2">
-                  {t.sensorType}
-                </label>
+                <label className="block text-xs text-gray-600 mb-2">{T.sensorType}</label>
                 <input
                   value={sensorModal.type}
-                  onChange={(e) =>
-                    setSensorModal((m) => ({
-                      ...m,
-                      type: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#43A047]"
-                  placeholder={t.sensorType}
+                  onChange={(e) => setSensorModal((m) => ({ ...m, type: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2E7D32]"
+                  placeholder={T.sensorType}
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 mt-5">
-              <button
-                type="button"
-                onClick={closeSensorModal}
-                className="px-4 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                {t.cancel}
+              <button type="button" onClick={closeSensorModal}
+                className="px-4 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
+                {T.cancel}
               </button>
-              <button
-                type="button"
-                onClick={saveSensorModal}
-                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]"
-              >
-                {t.save}
+              <button type="button" onClick={saveSensorModal}
+                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]">
+                {T.save}
               </button>
             </div>
           </div>
@@ -2603,171 +2554,163 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
   );
 }
 
-function Account_ProfilePage({ t, profile, onEdit }) {
+function Account_ProfilePage({ profile, onEdit, T }) {
+  const initials = (profile.fullName || "م")
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("");
+
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="grid grid-cols-1 gap-4">
-        <Account_Card>
-          <Account_CardHeader title={t.profile} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Account_EditableField
-              label="الاسم الكامل"
-              value={profile.fullName || '—'}
-              onEdit={() => onEdit("fullName")}
-            />
-            <Account_EditableField
-              label={t.username}
-              value={profile.username}
-              onEdit={() => onEdit("username")}
-            />
-            <Account_EditableField
-              label={t.email}
-              value={profile.email}
-              onEdit={() => onEdit("email")}
-            />
-            <Account_EditableField
-              label={t.password}
-              value={profile.password}
-              onEdit={() => onEdit("password")}
-              mono
-            />
+    <div className="flex flex-col gap-4">
+      {/* Avatar card */}
+      <Account_Card>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2E7D32] to-[#4ade80] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0 select-none">
+            {initials}
           </div>
-        </Account_Card>
-      </div>
+          <div className="text-right">
+            <div className="text-xl font-bold text-gray-800">{profile.fullName || "—"}</div>
+            <div className="text-[13px] text-gray-500 mt-0.5">{profile.email}</div>
+            <div className="text-[13px] text-gray-400 mt-0.5 font-mono">@{profile.username}</div>
+          </div>
+        </div>
+      </Account_Card>
+
+      {/* Editable fields */}
+      <Account_Card>
+        <div className="text-[16px] font-semibold text-gray-800 mb-4">{T.accountData}</div>
+        <div className="flex flex-col gap-3">
+          <Account_EditableField label={T.fullName}  value={profile.fullName || "—"} onEdit={() => onEdit("fullName")} />
+          <Account_EditableField label={T.username}  value={profile.username}         onEdit={() => onEdit("username")} />
+          <Account_EditableField label={T.email}     value={profile.email}            onEdit={() => onEdit("email")} />
+          <Account_EditableField label={T.password}  value={profile.password}         onEdit={() => onEdit("password")} mono />
+        </div>
+      </Account_Card>
     </div>
   );
 }
 
-function Account_SettingsPage({ t, sensors, onAddSensor, onEditSensor, onDeleteSensor, onLogout }) {
+function Account_SettingsPage({ T, language, setLanguage, sensors, onAddSensor, onEditSensor, onDeleteSensor, onLogout }) {
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      <div className="grid grid-cols-1 gap-4">
-        <Account_Card>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-col">
-              <div className="text-sm font-semibold text-gray-800 text-right">
-                {t.sensors}
+    <div className="flex flex-col gap-4">
+
+      {/* Sensors */}
+      <Account_Card>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="text-right">
+            <div className="text-[16px] font-semibold text-gray-800">{T.sensors}</div>
+            <div className="text-[13px] text-gray-500 mt-0.5">{T.sensorsSub}</div>
+          </div>
+          <button
+            type="button"
+            onClick={onAddSensor}
+            className="px-3 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20] transition-all duration-300 flex items-center gap-2 font-medium"
+          >
+            <Account_PlusIcon />
+            {T.addSensor}
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {sensors.map((s) => (
+            <div key={s.id} className="border border-gray-100 rounded-xl px-4 py-3 bg-[#fafafa] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0">
+                  <Account_SensorIcon />
+                </div>
+                <div className="text-right leading-tight">
+                  <div className="text-sm font-semibold text-gray-800">{s.name}</div>
+                  <div className="text-[13px] text-gray-500">{s.type} • <span className="font-mono">{s.id}</span></div>
+                </div>
               </div>
-              <div className="text-[11px] text-gray-500">
-                إدارة الحساسات المرتبطة بالمحمية (تعديل، حذف، إضافة).
+              <div className="flex items-center gap-2">
+                <Account_IconButton title={T.edit} onClick={() => onEditSensor(s)}>
+                  <Account_PencilIcon />
+                </Account_IconButton>
+                <Account_IconButton title={T.edit} danger onClick={() => onDeleteSensor(s.id)}>
+                  <Account_TrashIcon />
+                </Account_IconButton>
               </div>
             </div>
+          ))}
+          {sensors.length === 0 && (
+            <div className="text-center text-[13px] text-gray-400 py-6">{T.noSensors}</div>
+          )}
+        </div>
+      </Account_Card>
 
+      {/* Language */}
+      <Account_Card>
+        <div className="text-[16px] font-semibold text-gray-800 mb-4">{T.language}</div>
+        <div className="flex gap-2">
+          {[{ key: "ar", label: "عربي" }, { key: "en", label: "English" }].map(({ key, label }) => (
             <button
+              key={key}
               type="button"
-              onClick={onAddSensor}
-              className="px-3 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20] flex items-center gap-2"
+              onClick={() => setLanguage(key)}
+              className={`flex-1 py-2.5 rounded-xl border text-sm font-medium transition-all duration-300 ${language === key ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
             >
-              <Account_PlusIcon />
-              {t.addSensor}
+              {label}
             </button>
-          </div>
+          ))}
+        </div>
+      </Account_Card>
 
-          <div className="mt-4 flex flex-col gap-2">
-            {sensors.map((s) => (
-              <div
-                key={s.id}
-                className="border border-gray-200 rounded-xl px-3 py-3 bg-white flex items-center justify-between gap-3"
+      {/* Account actions */}
+      <Account_Card>
+        <div className="text-[16px] font-semibold text-gray-800 mb-4">{T.account}</div>
+        <div className="flex flex-col gap-2">
+          <Account_ListRow
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>}
+            title={T.userGuide}
+            subtitle={T.userGuideSub}
+            right={
+              <button className="px-4 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-all duration-300">
+                {T.openGuide}
+              </button>
+            }
+          />
+          <Account_ListRow
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c62828" strokeWidth="1.8" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>}
+            title={T.logout}
+            subtitle={T.logoutSub}
+            right={
+              <button
+                onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
+                className="px-4 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:bg-[#b71c1c] transition-all duration-300"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-[#E8F5E9] flex items-center justify-center">
-                    <Account_SensorIcon />
-                  </div>
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-sm font-medium text-gray-800">
-                      {s.name}
-                    </span>
-                    <span className="text-[11px] text-gray-500">
-                      {s.type} • {s.id}
-                    </span>
-                  </div>
-                </div>
+                {T.logoutBtn}
+              </button>
+            }
+          />
+        </div>
+      </Account_Card>
 
-                <div className="flex items-center gap-2">
-                  <Account_IconButton
-                    title={t.edit}
-                    onClick={() => onEditSensor(s)}
-                  >
-                    <Account_PencilIcon />
-                  </Account_IconButton>
-                  <Account_IconButton
-                    title={t.delete}
-                    danger
-                    onClick={() => onDeleteSensor(s.id)}
-                  >
-                    <Account_TrashIcon />
-                  </Account_IconButton>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Account_Card>
-
-        <Account_Card>
-          <Account_CardHeader title={t.settings} subtitle="" />
-          <div className="flex flex-col gap-2">
-            <Account_ListRow
-              title={t.userGuide}
-              subtitle="شرح استخدام لوحة التحكم، التنبيهات، والاختصارات."
-              right={
-                <button className="px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50">
-                  {t.openGuide}
-                </button>
-              }
-            />
-
-            <Account_ListRow
-              title={t.logout}
-              subtitle="إنهاء الجلسة الحالية بأمان."
-              right={
-                <button
-                  onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
-                  className="px-3 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:opacity-95"
-                >
-                  {t.logout}
-                </button>
-              }
-            />
-          </div>
-        </Account_Card>
-      </div>
     </div>
   );
 }
 
 function Account_Card({ children }) {
   return (
-    <section className="bg-white rounded-2xl shadow border border-gray-200 p-5">
+    <section
+      className="bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100/80 p-6"
+      style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}
+    >
       {children}
     </section>
   );
 }
 
-function Account_CardHeader({ title, subtitle }) {
-  return (
-    <div className="mb-4">
-      <div className="text-sm font-semibold text-gray-800 text-right">
-        {title}
-      </div>
-      {subtitle ? (
-        <div className="text-[13px] text-gray-500 mt-1">{subtitle}</div>
-      ) : null}
-    </div>
-  );
-}
-
 function Account_EditableField({ label, value, onEdit, mono }) {
   return (
-    <div className="border border-gray-200 rounded-2xl p-4 bg-white flex items-center justify-between gap-3">
-      <div className="flex flex-col">
-        <span className="text-xs text-gray-500 text-right">{label}</span>
-        <span
-          className={`text-sm text-gray-800 mt-1 ${mono ? "font-mono" : ""}`}
-        >
+    <div className="border border-gray-100 rounded-xl px-4 py-3 bg-[#fafafa] flex items-center justify-between gap-3">
+      <div className="text-right min-w-0">
+        <div className="text-[13px] text-gray-500">{label}</div>
+        <div className={`text-sm font-medium text-gray-800 mt-0.5 ${mono ? "font-mono tracking-widest" : ""}`}>
           {value}
-        </span>
+        </div>
       </div>
-
       <Account_IconButton title="تعديل" onClick={onEdit}>
         <Account_PencilIcon />
       </Account_IconButton>
@@ -2775,16 +2718,17 @@ function Account_EditableField({ label, value, onEdit, mono }) {
   );
 }
 
-function Account_ListRow({ title, subtitle, right }) {
+function Account_ListRow({ icon, title, subtitle, right }) {
   return (
-    <div className="border border-gray-200 rounded-2xl p-4 bg-white flex items-center justify-between gap-3">
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-gray-800 text-right">
-          {title}
-        </span>
-        <span className="text-[11px] text-gray-500 mt-1">{subtitle}</span>
+    <div className="border border-gray-100 rounded-xl px-4 py-3 bg-[#fafafa] flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        {icon && <div className="w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">{icon}</div>}
+        <div className="text-right min-w-0">
+          <div className="text-sm font-semibold text-gray-800">{title}</div>
+          <div className="text-[13px] text-gray-500 mt-0.5">{subtitle}</div>
+        </div>
       </div>
-      {right}
+      <div className="flex-shrink-0">{right}</div>
     </div>
   );
 }
