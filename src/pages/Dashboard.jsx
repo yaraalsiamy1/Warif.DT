@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { translations } from "../i18n";
 
 /* =========================================================
    WARIF | Dashboard (Scope: Sensors + Irrigation + Recs + Account/Settings)
@@ -8,15 +9,21 @@ import { useMemo, useState, useEffect } from "react";
      profile | settings
 ========================================================= */
 
-export default function Dashboard({ onLogout }) {
+export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
   const [userFullName, setUserFullName] = useState('');
-  const [language, setLanguage] = useState('ar');
+  const [language, setLanguage] = useState(propLang || 'ar');
+
+  useEffect(() => {
+    if (propLang) setLanguage(propLang);
+  }, [propLang]);
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
     if (saved.fullName) setUserFullName(saved.fullName);
-    if (saved.language) setLanguage(saved.language);
   }, []);
+
+  const T = translations[language];
+  const isRtl = language === 'ar';
 
   function handleNameUpdate(newName) {
     setUserFullName(newName);
@@ -26,11 +33,12 @@ export default function Dashboard({ onLogout }) {
 
   function handleLanguageChange(lang) {
     setLanguage(lang);
+    if (onLangChange) onLangChange(lang);
     const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
     localStorage.setItem('warif_user', JSON.stringify({ ...saved, language: lang }));
   }
 
-  const firstName = userFullName ? userFullName.split(' ')[0] : 'مستخدم';
+  const firstName = userFullName ? userFullName.split(' ')[0] : (isRtl ? 'مستخدم' : 'User');
 
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -59,25 +67,33 @@ export default function Dashboard({ onLogout }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [showUserMenu, showChat]);
 
-  // Get sensors from localStorage (from registration/settings)
-  const getSavedSensors = () => {
-    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
-    const sensorKeys = saved.sensors || ['temp', 'humidity', 'soil', 'irrigation'];
-    const sensorMap = {
-      temp: { name: 'حساس الحرارة', type: 'درجة الحرارة', value: '31°C', status: 'warning' },
-      humidity: { name: 'حساس الرطوبة', type: 'رطوبة الهواء', value: '58%', status: 'normal' },
-      soil: { name: 'حساس التربة', type: 'رطوبة التربة', value: '42%', status: 'normal' },
-      irrigation: { name: 'نظام الري', type: 'التحكم بالري', value: '60%', status: 'normal' },
-    };
-    // Also include custom sensors from settings
-    const customSensors = (saved.customSensors || []).map(s => ({
-      name: s.name, type: s.type, value: '—', status: 'normal'
-    }));
-    const defaultSensors = (Array.isArray(sensorKeys) ? sensorKeys : []).map(k => sensorMap[k]).filter(Boolean);
-    return [...defaultSensors, ...customSensors];
+  const DEFAULT_SENSOR_READINGS = {
+    'رطوبة التربة':  { value: '42%',  status: 'normal' },
+    'درجة الحرارة': { value: '31°C', status: 'warning' },
+    'رطوبة الهواء': { value: '58%',  status: 'normal' },
+    'الري':          { value: '60%',  status: 'normal' },
+    'التحكم بالري': { value: '60%',  status: 'normal' },
   };
 
-  const connectedSensors = getSavedSensors();
+  const [connectedSensors, setConnectedSensors] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    return saved.sensorList || [
+      { id: "S1", name: "حساس التربة",   type: "رطوبة التربة",  value: "42%",  status: "normal" },
+      { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة",  value: "31°C", status: "warning" },
+      { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء",  value: "58%",  status: "normal" },
+    ];
+  });
+
+  function handleSensorsChange(newSensors) {
+    const enriched = newSensors.map(s => ({
+      ...s,
+      value:  s.value  || DEFAULT_SENSOR_READINGS[s.type]?.value  || '—',
+      status: s.status || DEFAULT_SENSOR_READINGS[s.type]?.status || 'normal',
+    }));
+    setConnectedSensors(enriched);
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    localStorage.setItem('warif_user', JSON.stringify({ ...saved, sensorList: enriched }));
+  }
 
   const go = (to) => setPage(to);
 
@@ -131,7 +147,7 @@ export default function Dashboard({ onLogout }) {
     <>
       <div
         className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
-        dir="rtl"
+        dir={isRtl ? 'rtl' : 'ltr'}
       >
         <div className="w-full h-full flex flex-col">
           {/* ================= Header ================= */}
@@ -140,22 +156,22 @@ export default function Dashboard({ onLogout }) {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 text-[15px] text-gray-500">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
-                <span>درجة الحرارة</span>
+                <span>{T.farmTemp}</span>
                 <span className="font-bold text-[#ea580c]">31°C</span>
               </div>
               <div className="w-px h-4 bg-gray-100" />
               <div className="text-[15px] text-gray-400">
-                آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                {T.lastUpdate}: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
 
-            {/* Left: alerts + sensors + irrigation toggle + user */}
+            {/* Left: alerts + sensors + irrigation toggle + lang + user */}
             <div className="flex items-center gap-3">
 
               {/* Alert */}
               <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
                 <span className="w-2 h-2 rounded-full bg-[#ea580c] animate-pulse" />
-                حرارة مرتفعة
+                {T.highTemp}
               </div>
 
               {/* Connected sensors — clickable */}
@@ -165,7 +181,7 @@ export default function Dashboard({ onLogout }) {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer"
                 >
                   <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-                  {connectedSensors.length} حساسات متصلة
+                  {connectedSensors.length} {T.sensorsConnected}
                 </button>
               </div>
 
@@ -179,7 +195,7 @@ export default function Dashboard({ onLogout }) {
                     : "text-gray-400"
                     }`}
                 >
-                  تلقائي
+                  {T.auto}
                 </button>
                 <button
                   onClick={() => setMode("manual")}
@@ -188,9 +204,22 @@ export default function Dashboard({ onLogout }) {
                     : "text-gray-400"
                     }`}
                 >
-                  يدوي
+                  {T.manual}
                 </button>
               </div>
+
+              {/* Language toggle */}
+              <button
+                onClick={() => handleLanguageChange(language === 'ar' ? 'en' : 'ar')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12h20"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                {T.langToggle}
+              </button>
 
               {/* User dropdown */}
               <div className="relative" data-user-menu>
@@ -211,15 +240,15 @@ export default function Dashboard({ onLogout }) {
                 {showUserMenu && (
                   <div className="absolute left-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top left' }}>
                     <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> الحساب الشخصي
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> {T.myAccount}
                     </button>
                     <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> الإعدادات
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> {T.settings}
                     </button>
                     <button
                       onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> تسجيل الخروج
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> {T.logout}
                     </button>
                   </div>
                 )}
@@ -230,7 +259,7 @@ export default function Dashboard({ onLogout }) {
           {/* ================= Body with Persistent Sidebar ================= */}
           <main className="flex-1 min-h-0 flex">
             {/* Sidebar — always visible */}
-            <Sidebar currentPage={page} onGo={go} />
+            <Sidebar currentPage={page} onGo={go} T={T} />
 
             {/* Content Area */}
             <div className="flex-1 min-h-0 overflow-auto">
@@ -239,7 +268,7 @@ export default function Dashboard({ onLogout }) {
               ) : page === "recs" ? (
                 <RecommendationsPage onBack={() => go("dashboard")} />
               ) : page === "irrigation" ? (
-                <IrrigationPage onBack={() => go("dashboard")} />
+                <IrrigationPage onBack={() => go("dashboard")} mode={mode} />
               ) : page === "temp" ? (
                 <TemperaturePage onBack={() => go("dashboard")} />
               ) : page === "airHumidity" ? (
@@ -247,9 +276,9 @@ export default function Dashboard({ onLogout }) {
               ) : page === "soilMoisture" ? (
                 <SoilMoisturePage onBack={() => go("dashboard")} />
               ) : page === "profile" ? (
-                <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
+                <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
               ) : page === "settings" ? (
-                <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
+                <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
               ) : (
                 <PlaceholderPage page={page} onBack={() => go("dashboard")} />
               )}
@@ -278,7 +307,7 @@ export default function Dashboard({ onLogout }) {
                 <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" /></svg></div>
                 <div>
                   <div className="text-white font-semibold text-[15px]">مساعد وارِف</div>
-                  <div className="text-white/90 text-[12px]">يساعد في الاستفسارات والخدمات الزراعية</div>
+                  <div className="text-white/100 text-[12px]">يساعد في الاستفسارات والخدمات الزراعية</div>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 bg-gray-50/50">
@@ -290,7 +319,7 @@ export default function Dashboard({ onLogout }) {
                       }`}>
                       {msg.text}
                     </div>
-                  </div>تت
+                  </div>
                 ))}
               </div>
               <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80">
@@ -362,12 +391,12 @@ export default function Dashboard({ onLogout }) {
 /* =========================================================
    Sidebar (Persistent — always visible)
 ========================================================= */
-function Sidebar({ currentPage, onGo }) {
+function Sidebar({ currentPage, onGo, T }) {
   const [activeFarm, setActiveFarm] = useState(0);
   const quickMenu = [
-    { label: "التوصيات", icon: "recs", page: "recs", badge: "2" },
-    { label: "الري", icon: "irrigation", page: "irrigation" },
-    { label: "الحساسات", icon: "sensors", page: "dashboard" },
+    { label: T.recommendations, icon: "recs", page: "recs", badge: "2" },
+    { label: T.irrigation, icon: "irrigation", page: "irrigation" },
+    { label: T.dashboard, icon: "sensors", page: "dashboard" },
   ];
 
   const farms = ["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"];
@@ -1009,26 +1038,13 @@ function RecommendationsPage({ onBack }) {
   return (
     <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="text-right">
-            <div className="text-xl font-bold text-gray-800">التوصيات</div>
-            <div className="text-[13px] text-gray-500 mt-1">
-              جميع التوصيات المقترحة
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-            رجوع
-          </button>
-        </div>
+        <SensorTopBar
+          title="التوصيات"
+          subtitle="جميع التوصيات المقترحة"
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>}
+          onBack={onBack}
+          onExport={() => {}}
+        />
 
         {/* Filters */}
         <CardShell className="p-4 flex items-center justify-between gap-3">
@@ -1129,32 +1145,36 @@ function RecommendationsPage({ onBack }) {
    Irrigation Page (Safe Version - no name collisions)
 ========================================================= */
 
-function IrrigationPage({ onBack }) {
-  const months = useMemo(
-    () => [
-      "يناير",
-      "فبراير",
-      "مارس",
-      "أبريل",
-      "مايو",
-      "يونيو",
-      "يوليو",
-      "أغسطس",
-      "سبتمبر",
-      "أكتوبر",
-      "نوفمبر",
-      "ديسمبر",
-    ],
-    []
-  );
+function IrrigationPage({ onBack, mode }) {
+  const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+  const currentMonthIdx = new Date().getMonth();
 
-  const [month, setMonth] = useState(new Date().getMonth());
-  const [activeAction, setActiveAction] = useState("تشغيل الري الآن");
+  const [month, setMonth] = useState(currentMonthIdx);
+  const [activeAction, setActiveAction] = useState("start");
+
+  // Manual schedule state
+  const [morningEnabled, setMorningEnabled] = useState(true);
+  const [eveningEnabled, setEveningEnabled] = useState(true);
+  const [morningTime, setMorningTime] = useState("06:00");
+  const [eveningTime, setEveningTime] = useState("18:00");
+  const [duration, setDuration] = useState(30);
+  const [frequency, setFrequency] = useState("daily");
+
+  // AI boundary settings state
+  const [moistureMin, setMoistureMin] = useState(35);
+  const [moistureMax, setMoistureMax] = useState(55);
+  const [maxWater, setMaxWater] = useState(100);
+  const [restrictedEnabled, setRestrictedEnabled] = useState(true);
+  const [restrictedFrom, setRestrictedFrom] = useState("12:00");
+  const [restrictedTo, setRestrictedTo] = useState("15:00");
+  const [aiSensitivity, setAiSensitivity] = useState("moderate");
+
+  const isFutureMonth = month > currentMonthIdx;
 
   const series = useMemo(() => {
+    if (isFutureMonth) return [];
     const y = new Date().getFullYear();
     const d = irrigationDaysInMonth(y, month);
-
     return generateIrrigationUsageSeries({
       days: d,
       base: 55 + (month % 4) * 4,
@@ -1164,120 +1184,92 @@ function IrrigationPage({ onBack }) {
       max: 95,
       seed: 19 + month * 5,
     });
-  }, [month]);
+  }, [month, isFutureMonth]);
 
   const current = series[series.length - 1]?.value ?? 0;
+
+  const lastUpdateLabel = (() => {
+    if (month === currentMonthIdx) return "آخر تحديث: قبل 10 دقائق";
+    if (isFutureMonth) return `بيانات ${MONTHS[month]} غير متوفرة بعد`;
+    const lastDay = irrigationDaysInMonth(new Date().getFullYear(), month);
+    return `آخر تحديث: ${lastDay} ${MONTHS[month]}`;
+  })();
 
   return (
     <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="text-right">
-            <div className="text-xl font-bold text-gray-800">
-              تفاصيل حالة الري
-            </div>
-            <div className="text-[13px] text-gray-500 mt-1">
-              متابعة الاستخدام اليومي + إجراءات سريعة
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={onBack}
-            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-            رجوع
-          </button>
-        </div>
+        <SensorTopBar
+          title="تفاصيل حالة الري"
+          subtitle="متابعة الاستخدام اليومي + إجراءات سريعة"
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>}
+          onBack={onBack}
+          onExport={() => {}}
+        />
 
+        {/* Stats row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">
-                معدل الري اليوم
-              </div>
-              <div className="text-[13px] text-gray-500 mt-1">
-                آخر تحديث: قبل 10 دقائق
-              </div>
+              <div className="text-[16px] font-semibold text-gray-800">معدل الري اليوم</div>
+              <div className="text-[13px] text-gray-500 mt-1">{lastUpdateLabel}</div>
             </div>
             <div className="mt-4 flex items-center justify-center">
               <IrrigationDonut value={Math.round(current)} />
             </div>
             <div className="mt-2 text-center text-[12px] text-gray-700">
-              معدل الري % {Math.round(current)}
-            </div>{" "}
+              معدل الري {Math.round(current)}%
+            </div>
           </CardShell>
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">التحكم </div>
-              <div className="text-[13px] text-gray-500 mt-1"></div>
+              <div className="text-[16px] font-semibold text-gray-800">التحكم السريع</div>
+              <div className="text-[13px] text-gray-500 mt-1">إجراءات فورية</div>
             </div>
-
             <div className="mt-4 flex flex-col gap-3">
-              <IrrigationActionButton
-                label="تشغيل الري الآن"
-                active={activeAction === "تشغيل الري الآن"}
-                onClick={() => setActiveAction("تشغيل الري الآن")}
-              />
-              <IrrigationActionButton
-                label="جدولة الري"
-                active={activeAction === "جدولة الري"}
-                onClick={() => setActiveAction("جدولة الري")}
-              />
-              <IrrigationActionButton
-                label="إيقاف الري"
-                active={activeAction === "إيقاف الري"}
-                onClick={() => setActiveAction("إيقاف الري")}
-              />
+              <IrrigationActionButton label="تشغيل الري الآن" active={activeAction === "start"} onClick={() => setActiveAction("start")} />
+              <IrrigationActionButton label="جدولة الري"      active={activeAction === "schedule"} onClick={() => setActiveAction("schedule")} />
+              <IrrigationActionButton label="إيقاف الري"      active={activeAction === "stop"} onClick={() => setActiveAction("stop")} />
             </div>
           </CardShell>
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">
-                التوصيات
-              </div>
-              <div className="text-[13px] text-gray-500 mt-1">
-                مقترحات حسب القراءة
-              </div>
+              <div className="text-[16px] font-semibold text-gray-800">التوصيات</div>
+              <div className="text-[13px] text-gray-500 mt-1">مقترحات حسب القراءة</div>
             </div>
-
-            <div className="mt-4 w-full text-right" dir="rtl">
-              <ul className="list-disc list-inside text-sm text-gray-700 leading-6">
-                <li>
-                  معدل الري اليوم ضمن النطاق المتوسط، يُنصح بالاستمرار على
-                  إعدادات الري الحالية.
-                </li>
-              </ul>
-            </div>
+            <ul className="mt-4 list-disc list-inside text-sm text-gray-700 leading-7 text-right">
+              <li>معدل الري ضمن النطاق المتوسط، يُنصح بالاستمرار على الإعدادات الحالية.</li>
+              <li>تجنب الري خلال ساعات الذروة الحرارية (12–15).</li>
+            </ul>
           </CardShell>
         </div>
 
+        {/* Monthly Chart */}
         <CardShell className="p-5">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">
-                الرسم البياني الشهري
-              </div>
+              <div className="text-[16px] font-semibold text-gray-800">الرسم البياني الشهري</div>
               <div className="text-[13px] text-gray-500 mt-1">
-                يوضح الرسم نسبة استخدام الري خلال أيام الشهر.
+                {isFutureMonth
+                  ? "لا تتوفر بيانات للأشهر المستقبلية"
+                  : "يوضح الرسم نسبة استخدام الري خلال أيام الشهر"}
               </div>
             </div>
-
-            <div className="flex items-center gap-2 flex-wrap justify-start">
-              {months.map((m, idx) => (
+            <div className="flex items-center gap-1.5 flex-wrap justify-start">
+              {MONTHS.map((m, idx) => (
                 <button
                   key={m}
                   type="button"
-                  onClick={() => setMonth(idx)}
-                  className={`px-3 py-2 rounded-xl text-xs border transition ${idx === month
-                    ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
-                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                    }`}
+                  onClick={() => idx <= currentMonthIdx && setMonth(idx)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition ${
+                    idx === month
+                      ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
+                      : idx > currentMonthIdx
+                      ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
+                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
                   {m}
                 </button>
@@ -1285,14 +1277,193 @@ function IrrigationPage({ onBack }) {
             </div>
           </div>
 
-          <div className="mt-4">
-            <IrrigationBarChart2D
-              data={series}
-              yLabel="نسبة الاستخدام"
-              unit="%"
-            />
-          </div>
+          {isFutureMonth ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+              </svg>
+              <div className="mt-3 text-[15px] font-medium">بيانات {MONTHS[month]} غير متوفرة بعد</div>
+              <div className="text-[13px] mt-1">سيتم عرضها عند بداية الشهر</div>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <IrrigationBarChart2D data={series} yLabel="نسبة الاستخدام" unit="%" />
+            </div>
+          )}
         </CardShell>
+
+        {/* Auto mode: AI boundary settings */}
+        {mode === "auto" && <CardShell className="p-5" key="ai-settings">
+          <div className="text-right mb-5">
+            <div className="text-[16px] font-semibold text-gray-800">حدود الري الذكي</div>
+            <div className="text-[13px] text-gray-500 mt-0.5">القيود التي يلتزم بها النظام عند اتخاذ قرارات الري تلقائياً بناءً على قراءات الحساسات</div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {/* Target moisture range */}
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="text-sm font-semibold text-gray-800 mb-3">نطاق رطوبة التربة المستهدف</div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2 text-[13px] text-gray-500">
+                  <span className="w-8">من</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[25, 30, 35, 40].map(v => (
+                      <button key={v} type="button" onClick={() => setMoistureMin(v)}
+                        className={`px-2.5 py-1 rounded-lg border text-xs transition ${moistureMin === v ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                        {v}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] text-gray-500">
+                  <span className="w-8">إلى</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[50, 55, 60, 65].map(v => (
+                      <button key={v} type="button" onClick={() => setMoistureMax(v)}
+                        className={`px-2.5 py-1 rounded-lg border text-xs transition ${moistureMax === v ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                        {v}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Max daily water */}
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="text-sm font-semibold text-gray-800 mb-3">الحد الأقصى للمياه اليومية</div>
+              <div className="flex gap-2 flex-wrap">
+                {[{v:50,l:'50 لتر'},{v:100,l:'100 لتر'},{v:200,l:'200 لتر'},{v:0,l:'بلا حد'}].map(({v,l}) => (
+                  <button key={v} type="button" onClick={() => setMaxWater(v)}
+                    className={`px-3 py-1.5 rounded-lg border text-sm transition ${maxWater === v ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Restricted hours */}
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">ساعات محظورة</div>
+                  <div className="text-[12px] text-gray-400 mt-0.5">لا يُشغَّل الري خلال هذه الفترة</div>
+                </div>
+                <button type="button" onClick={() => setRestrictedEnabled(v => !v)}
+                  className={`w-11 h-6 rounded-full relative transition-all duration-300 ${restrictedEnabled ? 'bg-[#2E7D32]' : 'bg-gray-300'}`}>
+                  <span className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow transition-all duration-300 ${restrictedEnabled ? 'right-1' : 'left-1'}`} />
+                </button>
+              </div>
+              {restrictedEnabled && (
+                <div className="flex items-center gap-2 text-[13px] text-gray-600">
+                  <span>من</span>
+                  <input type="time" value={restrictedFrom} onChange={e => setRestrictedFrom(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                  <span>إلى</span>
+                  <input type="time" value={restrictedTo} onChange={e => setRestrictedTo(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                </div>
+              )}
+            </div>
+
+            {/* AI sensitivity */}
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="text-sm font-semibold text-gray-800 mb-1">حساسية النظام الذكي</div>
+              <div className="text-[12px] text-gray-400 mb-3">مدى سرعة استجابة النظام لتغيرات الحساسات</div>
+              <div className="flex gap-2">
+                {[{k:'conservative',l:'محافظ'},{k:'moderate',l:'معتدل'},{k:'active',l:'نشط'}].map(({k,l}) => (
+                  <button key={k} type="button" onClick={() => setAiSensitivity(k)}
+                    className={`flex-1 py-2 rounded-lg border text-sm font-medium transition ${aiSensitivity === k ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-start">
+            <button type="button"
+              className="px-5 py-2.5 rounded-xl bg-[#2E7D32] text-white text-sm font-medium hover:bg-[#1B5E20] transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-green-900/15">
+              حفظ الحدود
+            </button>
+          </div>
+        </CardShell>}
+
+        {/* Manual mode: fixed schedule */}
+        {mode === "manual" && <CardShell className="p-5" key="manual-settings">
+          <div className="text-right mb-5">
+            <div className="text-[16px] font-semibold text-gray-800">جدول الري اليدوي</div>
+            <div className="text-[13px] text-gray-500 mt-0.5">حدد أوقات الري ومدته في الوضع اليدوي</div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-semibold text-gray-800">ري الصباح</div>
+                <button type="button" onClick={() => setMorningEnabled(v => !v)}
+                  className={`w-11 h-6 rounded-full relative transition-all duration-300 ${morningEnabled ? 'bg-[#2E7D32]' : 'bg-gray-300'}`}>
+                  <span className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow transition-all duration-300 ${morningEnabled ? 'right-1' : 'left-1'}`} />
+                </button>
+              </div>
+              {morningEnabled && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] text-gray-500">الوقت:</span>
+                  <input type="time" value={morningTime} onChange={e => setMorningTime(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                </div>
+              )}
+            </div>
+
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-semibold text-gray-800">ري المساء</div>
+                <button type="button" onClick={() => setEveningEnabled(v => !v)}
+                  className={`w-11 h-6 rounded-full relative transition-all duration-300 ${eveningEnabled ? 'bg-[#2E7D32]' : 'bg-gray-300'}`}>
+                  <span className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow transition-all duration-300 ${eveningEnabled ? 'right-1' : 'left-1'}`} />
+                </button>
+              </div>
+              {eveningEnabled && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] text-gray-500">الوقت:</span>
+                  <input type="time" value={eveningTime} onChange={e => setEveningTime(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                </div>
+              )}
+            </div>
+
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="text-sm font-semibold text-gray-800 mb-3">مدة الري</div>
+              <div className="flex gap-2 flex-wrap">
+                {[15,30,45,60].map(min => (
+                  <button key={min} type="button" onClick={() => setDuration(min)}
+                    className={`px-3 py-1.5 rounded-lg border text-sm transition ${duration === min ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {min} دقيقة
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
+              <div className="text-sm font-semibold text-gray-800 mb-3">تكرار الري</div>
+              <div className="flex gap-2 flex-wrap">
+                {[{key:"daily",label:"يومي"},{key:"every2",label:"كل يومين"},{key:"weekly",label:"أسبوعي"}].map(({key,label}) => (
+                  <button key={key} type="button" onClick={() => setFrequency(key)}
+                    className={`px-3 py-1.5 rounded-lg border text-sm transition ${frequency === key ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-start">
+            <button type="button"
+              className="px-5 py-2.5 rounded-xl bg-[#2E7D32] text-white text-sm font-medium hover:bg-[#1B5E20] transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-green-900/15">
+              حفظ الجدول
+            </button>
+          </div>
+        </CardShell>}
+
       </div>
     </div>
   );
@@ -2351,7 +2522,7 @@ function SoilMoisturePage({ onBack }) {
    Account + Settings
 ========================================================= */
 
-function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, onNameUpdate, language, onLanguageChange }) {
+function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, onNameUpdate, language, onLanguageChange, sensors: propSensors, onSensorsChange }) {
 
   const [page, setPage] = useState(initialPage);
 
@@ -2366,21 +2537,7 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
   const [editingField, setEditingField] = useState(null);
   const [draftValue, setDraftValue] = useState("");
 
-  const sensorMap = {
-    temp: { name: "حساس الحرارة", type: "درجة الحرارة" },
-    humidity: { name: "حساس الرطوبة", type: "رطوبة الهواء" },
-    soil: { name: "حساس التربة", type: "رطوبة التربة" },
-    irrigation: { name: "نظام الري", type: "الري" },
-  };
-  const savedSensors = JSON.parse(localStorage.getItem('warif_user') || '{}').sensors || [];
-  const initialSensors = savedSensors.length > 0
-    ? savedSensors.map((key, i) => ({ id: `S${i + 1}`, ...sensorMap[key] }))
-    : [
-      { id: "S1", name: "حساس التربة", type: "رطوبة التربة" },
-      { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة" },
-      { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء" },
-    ];
-  const [sensors, setSensors] = useState(initialSensors);
+  const sensors = propSensors || [];
 
   const [sensorModal, setSensorModal] = useState({
     open: false,
@@ -2451,22 +2608,22 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
     const type = sensorModal.type.trim();
     if (!name || !type) return;
 
+    let updated;
     if (sensorModal.mode === "add") {
       const newId = `S${Math.floor(Math.random() * 9000 + 1000)}`;
-      setSensors((arr) => [{ id: newId, name, type }, ...arr]);
+      updated = [{ id: newId, name, type }, ...sensors];
     } else {
-      setSensors((arr) =>
-        arr.map((s) => (s.id === sensorModal.id ? { ...s, name, type } : s))
-      );
+      updated = sensors.map((s) => (s.id === sensorModal.id ? { ...s, name, type } : s));
     }
 
+    onSensorsChange?.(updated);
     closeSensorModal();
   }
 
   function deleteSensor(id) {
     const ok = confirm(language === 'ar' ? "هل تريد حذف هذا الحساس؟" : "Delete this sensor?");
     if (!ok) return;
-    setSensors((arr) => arr.filter((s) => s.id !== id));
+    onSensorsChange?.(sensors.filter((s) => s.id !== id));
   }
 
   const isRtl = language === 'ar';
@@ -2998,7 +3155,7 @@ function ArrowLeftIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M15 18l-6-6 6-6" />
+      <path d="M9 18l6-6-6-6" />
     </svg>
   );
 }
