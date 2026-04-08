@@ -30,11 +30,16 @@ export default function Dashboard({ onLogout }) {
     localStorage.setItem('warif_user', JSON.stringify({ ...saved, language: lang }));
   }
 
+  const firstName = userFullName ? userFullName.split(' ')[0] : 'مستخدم';
+
   const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { role: "bot", text: "مرحباً منصور! أنا مساعدك الذكي. كيف أساعدك اليوم؟" }
-  ]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
+
+  // Initialize chat greeting with user name
+  useEffect(() => {
+    setChatMessages([{ role: "bot", text: `مرحباً ${firstName}! أنا مساعدك الذكي. كيف أساعدك اليوم؟` }]);
+  }, [firstName]);
 
   const [mode, setMode] = useState("auto");
 
@@ -44,11 +49,35 @@ export default function Dashboard({ onLogout }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSensorsPopup, setShowSensorsPopup] = useState(false);
 
-  const connectedSensors = [
-    { id: "S1", name: "حساس التربة",    type: "رطوبة التربة",   value: "42%",  status: "normal" },
-    { id: "S2", name: "حساس الحرارة",  type: "درجة الحرارة",   value: "31°C", status: "warning" },
-    { id: "S3", name: "حساس الرطوبة",  type: "رطوبة الهواء",   value: "58%",  status: "normal" },
-  ];
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (showUserMenu && !e.target.closest('[data-user-menu]')) setShowUserMenu(false);
+      if (showChat && !e.target.closest('[data-chatbot]')) setShowChat(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showUserMenu, showChat]);
+
+  // Get sensors from localStorage (from registration/settings)
+  const getSavedSensors = () => {
+    const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
+    const sensorKeys = saved.sensors || ['temp', 'humidity', 'soil', 'irrigation'];
+    const sensorMap = {
+      temp: { name: 'حساس الحرارة', type: 'درجة الحرارة', value: '31°C', status: 'warning' },
+      humidity: { name: 'حساس الرطوبة', type: 'رطوبة الهواء', value: '58%', status: 'normal' },
+      soil: { name: 'حساس التربة', type: 'رطوبة التربة', value: '42%', status: 'normal' },
+      irrigation: { name: 'نظام الري', type: 'التحكم بالري', value: '60%', status: 'normal' },
+    };
+    // Also include custom sensors from settings
+    const customSensors = (saved.customSensors || []).map(s => ({
+      name: s.name, type: s.type, value: '—', status: 'normal'
+    }));
+    const defaultSensors = (Array.isArray(sensorKeys) ? sensorKeys : []).map(k => sensorMap[k]).filter(Boolean);
+    return [...defaultSensors, ...customSensors];
+  };
+
+  const connectedSensors = getSavedSensors();
 
   const go = (to) => setPage(to);
 
@@ -69,7 +98,7 @@ export default function Dashboard({ onLogout }) {
           model: "claude-opus-4-5",
           max_tokens: 1024,
           system: `أنت مساعد ذكي لنظام وارِف لإدارة المحميات الزراعية. 
-          المستخدم اسمه منصور الزهراني.
+          المستخدم اسمه ${userFullName || 'مستخدم'}.
           بيانات المحمية الحالية:
           - اسم المحمية: محمية الخضروات
           - درجة الحرارة: 31°C (أعلى من المثالي 22-28°C)
@@ -99,217 +128,234 @@ export default function Dashboard({ onLogout }) {
   };
 
   return (
-    <div
-      className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
-      dir="rtl"
-    >
-      <div className="w-full h-full flex flex-col">
-        {/* ================= Header ================= */}
-        <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-5 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
-          {/* Right: Temp + Time */}
-          <div className="flex items-center gap-4">
-            <div className="w-px h-4 bg-gray-100" />
-            <div className="flex items-center gap-1.5 text-[15px] text-gray-500">
-              <span>درجة الحرارة</span>
-              <span className="font-semibold text-[#ea580c]">31°C</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
-            </div>
-            <div className="w-px h-4 bg-gray-100" />
-            <div className="text-[15px] text-gray-400">
-              آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-          </div>
-
-          {/* Left: alerts + sensors + irrigation toggle + user */}
-          <div className="flex items-center gap-3">
-
-            {/* Alert */}
-            <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
-              <span className="w-2 h-2 rounded-full bg-[#ea580c] animate-pulse" />
-              حرارة مرتفعة
-            </div>
-
-            {/* Connected sensors — clickable */}
-            <div className="relative" data-sensors-popup>
-              <button
-                onClick={() => setShowSensorsPopup(v => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-                {connectedSensors.length} حساسات متصلة
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className={`transition-transform duration-300 ${showSensorsPopup ? 'rotate-180' : ''}`}><path d="M19 9l-7 7-7-7" /></svg>
-              </button>
-
-              {showSensorsPopup && (
-                <div className="absolute top-full mt-2 right-0 w-64 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top right' }}>
-                  <div className="px-4 py-3 border-b border-gray-50">
-                    <div className="text-sm font-semibold text-gray-800">الحساسات المتصلة</div>
-                    <div className="text-[13px] text-gray-400 mt-0.5">آخر تحديث قبل 5 دقائق</div>
-                  </div>
-                  <div className="py-1">
-                    {connectedSensors.map((s) => (
-                      <div key={s.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c]' : 'bg-[#16a34a]'}`} />
-                          <div>
-                            <div className="text-sm font-medium text-gray-800">{s.name}</div>
-                            <div className="text-[12px] text-gray-400">{s.type}</div>
-                          </div>
-                        </div>
-                        <span className={`text-sm font-semibold ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Irrigation toggle */}
-            <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '120px' }}>
-              <button
-                onClick={() => setMode("auto")}
-                className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "auto"
-                    ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
-                    : "text-gray-400"
-                  }`}
-              >
-                تلقائي
-              </button>
-              <button
-                onClick={() => setMode("manual")}
-                className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "manual"
-                    ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
-                    : "text-gray-400"
-                  }`}
-              >
-                يدوي
-              </button>
-            </div>
-
-            {/* User dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
-              >
-                <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M6 20c0-4 3-6 6-6s6 2 6 6" />
-                  </svg>
-                </div>
-                {userFullName || 'المستخدم'}
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-
-              {showUserMenu && (
-                <div className="absolute left-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top left' }}>
-                  <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> الحساب الشخصي
-                  </button>
-                  <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> الإعدادات
-                  </button>
-                  <button
-                    onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> تسجيل الخروج
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* ================= Body with Persistent Sidebar ================= */}
-        <main className="flex-1 min-h-0 flex">
-          {/* Sidebar — always visible */}
-          <Sidebar currentPage={page} onGo={go} />
-
-          {/* Content Area */}
-          <div className="flex-1 min-h-0 overflow-auto">
-            {page === "dashboard" ? (
-              <DashboardHome onGo={go} onSendAI={sendToAI} />
-            ) : page === "recs" ? (
-              <RecommendationsPage onBack={() => go("dashboard")} />
-            ) : page === "irrigation" ? (
-              <IrrigationPage onBack={() => go("dashboard")} />
-            ) : page === "temp" ? (
-              <TemperaturePage onBack={() => go("dashboard")} />
-            ) : page === "airHumidity" ? (
-              <AirHumidityPage onBack={() => go("dashboard")} />
-            ) : page === "soilMoisture" ? (
-              <SoilMoisturePage onBack={() => go("dashboard")} />
-            ) : page === "profile" ? (
-              <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
-            ) : page === "settings" ? (
-              <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
-            ) : (
-              <PlaceholderPage page={page} onBack={() => go("dashboard")} />
-            )}
-          </div>
-        </main>
-
-        {/* Chatbot FAB */}
-        <button
-          onClick={() => setShowChat(!showChat)}
-          className={`fixed bottom-6 left-6 w-16 h-16 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:shadow-green-600/25 transition-all duration-500 z-50 ${!showChat ? 'animate-pulse-glow' : ''}`}
-          style={{ transform: showChat ? 'rotate(0deg)' : 'rotate(0deg)' }}
-        >
-          <div className={`transition-all duration-300 ${showChat ? 'rotate-90 scale-90' : 'rotate-0 scale-100'}`}>
-            {showChat ? (
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            ) : (
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-            )}
-          </div>
-        </button>
-
-        {showChat && (
-          <div className="fixed bottom-24 left-6 w-80 h-[420px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 flex flex-col overflow-hidden z-50 animate-chat-slide-up">
-            <div className="bg-gradient-to-l from-[#16a34a] to-[#15803d] px-4 py-3.5 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" /></svg></div>
-              <div>
-                <div className="text-white font-semibold text-sm">مساعد وارِف</div>
-                <div className="text-white/60 text-[11px]">يساعد في الاستفسارات والخدمات الزراعية</div>
+    <>
+      <div
+        className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
+        dir="rtl"
+      >
+        <div className="w-full h-full flex flex-col">
+          {/* ================= Header ================= */}
+          <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-5 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
+            {/* Right: Temp + Time */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-[15px] text-gray-500">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
+                <span>درجة الحرارة</span>
+                <span className="font-bold text-[#ea580c]">31°C</span>
+              </div>
+              <div className="w-px h-4 bg-gray-100" />
+              <div className="text-[15px] text-gray-400">
+                آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 bg-gray-50/50">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex animate-message-pop ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
-                  <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${msg.role === "user"
+
+            {/* Left: alerts + sensors + irrigation toggle + user */}
+            <div className="flex items-center gap-3">
+
+              {/* Alert */}
+              <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
+                <span className="w-2 h-2 rounded-full bg-[#ea580c] animate-pulse" />
+                حرارة مرتفعة
+              </div>
+
+              {/* Connected sensors — clickable */}
+              <div className="relative" data-sensors-popup>
+                <button
+                  onClick={() => setShowSensorsPopup(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+                  {connectedSensors.length} حساسات متصلة
+                </button>
+              </div>
+
+
+              {/* Irrigation toggle */}
+              <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '120px' }}>
+                <button
+                  onClick={() => setMode("auto")}
+                  className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "auto"
+                    ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
+                    : "text-gray-400"
+                    }`}
+                >
+                  تلقائي
+                </button>
+                <button
+                  onClick={() => setMode("manual")}
+                  className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "manual"
+                    ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
+                    : "text-gray-400"
+                    }`}
+                >
+                  يدوي
+                </button>
+              </div>
+
+              {/* User dropdown */}
+              <div className="relative" data-user-menu>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="8" r="4" />
+                      <path d="M6 20c0-4 3-6 6-6s6 2 6 6" />
+                    </svg>
+                  </div>
+                  {userFullName || 'المستخدم'}
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute left-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top left' }}>
+                    <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> الحساب الشخصي
+                    </button>
+                    <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> الإعدادات
+                    </button>
+                    <button
+                      onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> تسجيل الخروج
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* ================= Body with Persistent Sidebar ================= */}
+          <main className="flex-1 min-h-0 flex">
+            {/* Sidebar — always visible */}
+            <Sidebar currentPage={page} onGo={go} />
+
+            {/* Content Area */}
+            <div className="flex-1 min-h-0 overflow-auto">
+              {page === "dashboard" ? (
+                <DashboardHome onGo={go} onSendAI={sendToAI} />
+              ) : page === "recs" ? (
+                <RecommendationsPage onBack={() => go("dashboard")} />
+              ) : page === "irrigation" ? (
+                <IrrigationPage onBack={() => go("dashboard")} />
+              ) : page === "temp" ? (
+                <TemperaturePage onBack={() => go("dashboard")} />
+              ) : page === "airHumidity" ? (
+                <AirHumidityPage onBack={() => go("dashboard")} />
+              ) : page === "soilMoisture" ? (
+                <SoilMoisturePage onBack={() => go("dashboard")} />
+              ) : page === "profile" ? (
+                <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
+              ) : page === "settings" ? (
+                <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} />
+              ) : (
+                <PlaceholderPage page={page} onBack={() => go("dashboard")} />
+              )}
+            </div>
+          </main>
+
+          {/* Chatbot FAB */}
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className={`fixed bottom-6 left-6 w-16 h-16 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:shadow-green-600/25 transition-all duration-500 z-50 ${!showChat ? 'animate-pulse-glow' : ''}`}
+            style={{ transform: showChat ? 'rotate(0deg)' : 'rotate(0deg)' }}
+            data-chatbot
+          >
+            <div className={`transition-all duration-300 ${showChat ? 'rotate-90 scale-90' : 'rotate-0 scale-100'}`}>
+              {showChat ? (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              ) : (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+              )}
+            </div>
+          </button>
+
+          {showChat && (
+            <div className="fixed bottom-24 left-6 w-96 h-[480px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 flex flex-col overflow-hidden z-50 animate-chat-slide-up" data-chatbot>
+              <div className="bg-gradient-to-l from-[#16a34a] to-[#15803d] px-4 py-3.5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" /></svg></div>
+                <div>
+                  <div className="text-white font-semibold text-[15px]">مساعد وارِف</div>
+                  <div className="text-white/90 text-[12px]">يساعد في الاستفسارات والخدمات الزراعية</div>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 bg-gray-50/50">
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex animate-message-pop ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
+                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed ${msg.role === "user"
                       ? "bg-gradient-to-l from-[#16a34a] to-[#22c55e] text-white rounded-bl-md shadow-sm"
                       : "bg-white text-gray-700 border border-gray-100 rounded-br-md shadow-sm"
-                    }`}>
-                    {msg.text}
+                      }`}>
+                      {msg.text}
+                    </div>
+                  </div>تت
+                ))}
+              </div>
+              <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80">
+                {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
+                  <button key={q} onClick={() => sendToAI(q)}
+                    className="text-[13px] px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] hover:border-[#bbf7d0] transition-all duration-300">
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <div className="px-3 py-2.5 flex gap-2 border-t border-gray-100/60 bg-white">
+                <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
+                  placeholder="اسألني عن محميتك..."
+                  className="input-enhanced flex-1 text-[15px] border border-gray-200 rounded-xl px-3 py-2.5 outline-none bg-gray-50/50"
+                />
+                <button onClick={() => { if (chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
+                  className="w-10 h-10 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-xl flex items-center justify-center hover:shadow-md hover:shadow-green-600/20 transition-all duration-300 active:scale-95 flex-shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ===== Sensors Popup Modal (root level) ===== */}
+      {showSensorsPopup && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[9999]" dir="rtl" onClick={() => setShowSensorsPopup(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-[420px] max-w-[92vw] overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <div className="text-[16px] font-bold text-gray-800">الحساسات المتصلة</div>
+                <div className="text-[13px] text-gray-400 mt-0.5">آخر تحديث قبل 5 دقائق</div>
+              </div>
+              <button onClick={() => setShowSensorsPopup(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-3 flex flex-col gap-2">
+              {connectedSensors.map((s, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 bg-[#fafafa] hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${s.status === 'warning' ? 'bg-[#FFF7ED]' : 'bg-[#E8F5E9]'}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2" strokeLinecap="round">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill={s.status === 'warning' ? '#ea580c' : '#2E7D32'} />
+                      </svg>
+                    </div>
+                    <div className="text-right leading-tight">
+                      <div className="text-[14px] font-semibold text-gray-800">{s.name}</div>
+                      <div className="text-[12px] text-gray-400">{s.type}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[14px] font-bold ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c] animate-pulse' : 'bg-[#16a34a]'}`} />
                   </div>
                 </div>
               ))}
             </div>
-            <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80">
-              {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
-                <button key={q} onClick={() => sendToAI(q)}
-                  className="text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] hover:border-[#bbf7d0] transition-all duration-300">
-                  {q}
-                </button>
-              ))}
-            </div>
-            <div className="px-3 py-2.5 flex gap-2 border-t border-gray-100/60 bg-white">
-              <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
-                placeholder="اسألني عن محميتك..."
-                className="input-enhanced flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2.5 outline-none bg-gray-50/50"
-              />
-              <button onClick={() => { if (chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
-                className="w-9 h-9 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-xl flex items-center justify-center hover:shadow-md hover:shadow-green-600/20 transition-all duration-300 active:scale-95">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-              </button>
-            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
 
+    </>
   );
 }
 
@@ -317,11 +363,14 @@ export default function Dashboard({ onLogout }) {
    Sidebar (Persistent — always visible)
 ========================================================= */
 function Sidebar({ currentPage, onGo }) {
+  const [activeFarm, setActiveFarm] = useState(0);
   const quickMenu = [
     { label: "التوصيات", icon: "recs", page: "recs", badge: "2" },
     { label: "الري", icon: "irrigation", page: "irrigation" },
     { label: "الحساسات", icon: "sensors", page: "dashboard" },
   ];
+
+  const farms = ["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"];
 
   return (
     <div className="w-64 bg-white/80 backdrop-blur-sm border-l border-gray-100/60 flex flex-col flex-shrink-0 h-full">
@@ -333,10 +382,10 @@ function Sidebar({ currentPage, onGo }) {
       {/* المحميات */}
       <div className="p-3 border-b border-gray-50">
         <div className="text-sm text-gray-400 font-semibold mb-2 px-1">المحميات</div>
-        {["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"].map((farm, i) => (
-          <div key={farm} onClick={() => onGo("dashboard")} className={`sidebar-item flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-[15px] mb-0.5 transition-all duration-300 ${i === 0 ? "active bg-[#f0fdf4] text-[#16a34a] font-medium shadow-sm" : "text-gray-500 hover:bg-gray-50"
+        {farms.map((farm, i) => (
+          <div key={farm} onClick={() => { setActiveFarm(i); onGo("dashboard"); }} className={`sidebar-item flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-[15px] mb-0.5 transition-all duration-300 ${activeFarm === i ? "active bg-[#f0fdf4] text-[#16a34a] font-medium shadow-sm" : "text-gray-500 hover:bg-gray-50"
             }`}>
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-500 ${i === 0 ? "bg-[#16a34a] shadow-sm shadow-green-400/50" : "bg-gray-300"}`} />
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-500 ${activeFarm === i ? "bg-[#16a34a] shadow-sm shadow-green-400/50" : "bg-gray-300"}`} />
             {farm}
           </div>
         ))}
@@ -362,7 +411,7 @@ function Sidebar({ currentPage, onGo }) {
       <div className="p-3 border-t border-gray-50">
         <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-3.5 border border-gray-100/50">
           <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg> مكة المكرمة</div>
-          <div className="text-lg font-bold text-gray-800">33°C</div>
+          <div className="text-lg font-bold text-gray-800">31°C</div>
           <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
         </div>
       </div>
@@ -695,9 +744,9 @@ function RecommendationsCard({ onGo }) {
         <button
           type="button"
           onClick={() => onGo("recs")}
-          className="text-sm text-[#2E7D32] underline hover:text-[#1B5E20]"
+          className="text-xs text-[#2E7D32] bg-[#E8F5E9] px-3 py-1.5 rounded-xl hover:bg-[#C8E6C9] hover:shadow-sm transition-all duration-300 shrink-0 font-semibold group"
         >
-          عرض الكل
+          عرض الكل <span className="inline-block transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
         </button>
       </div>
 
@@ -751,9 +800,11 @@ function PlaceholderPage({ page, onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
+            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
           >
-            <ArrowLeftIcon />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
             رجوع
           </button>
         </div>
@@ -950,7 +1001,7 @@ function RecommendationsPage({ onBack }) {
   };
 
   const filterBtn = (key) =>
-    `px-3 py-2 rounded-xl text-xs border transition ${filter === key
+    `px-3.5 py-2 rounded-xl text-sm border transition ${filter === key
       ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
       : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
     }`;
@@ -970,16 +1021,18 @@ function RecommendationsPage({ onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
+            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
           >
-            <ArrowLeftIcon />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
             رجوع
           </button>
         </div>
 
         {/* Filters */}
         <CardShell className="p-4 flex items-center justify-between gap-3">
-          <div className="text-sm text-gray-700">عرض حسب:</div>
+          <div className="text-[15px] text-gray-700">عرض حسب:</div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -1023,8 +1076,8 @@ function RecommendationsPage({ onBack }) {
               <div
                 key={it.id}
                 className={`p-4 flex items-center justify-between gap-3 ${idx !== filteredItems.length - 1
-                    ? "border-b border-gray-100"
-                    : ""
+                  ? "border-b border-gray-100"
+                  : ""
                   }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -1038,7 +1091,7 @@ function RecommendationsPage({ onBack }) {
                         {it.title}
                       </div>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] border ${badgeClass(
+                        className={`px-2 py-0.5 rounded-full text-[11px] border ${badgeClass(
                           it.tone
                         )}`}
                       >
@@ -1046,34 +1099,27 @@ function RecommendationsPage({ onBack }) {
                       </span>
                     </div>
 
-                    <div className="text-[12px] text-gray-600 mt-1">
+                    <div className="text-[14px] text-gray-600 mt-1">
                       {it.desc}
                     </div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="px-3 py-2 rounded-xl border border-gray-300 text-xs text-gray-700 hover:bg-gray-50 shrink-0"
-                  onClick={() => {}}
-                >
-                  تفاصيل
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#2E7D32] hover:bg-[#f0fdf4] hover:border-[#2E7D32]/30 transition-all duration-300"
+                    title="تم التنفيذ"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))
           )}
         </CardShell>
-
-        {/* Footer */}
-        <div className="flex justify-end">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]"
-            onClick={() => { }}
-          >
-            تصدير / مشاركة
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -1138,9 +1184,11 @@ function IrrigationPage({ onBack }) {
           <button
             type="button"
             onClick={onBack}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
+            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
           >
-            <ArrowLeftIcon />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
             رجوع
           </button>
         </div>
@@ -1227,8 +1275,8 @@ function IrrigationPage({ onBack }) {
                   type="button"
                   onClick={() => setMonth(idx)}
                   className={`px-3 py-2 rounded-xl text-xs border transition ${idx === month
-                      ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
-                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                    ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
+                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
                     }`}
                 >
                   {m}
@@ -1257,8 +1305,8 @@ function IrrigationActionButton({ label, active, onClick }) {
       type="button"
       onClick={onClick}
       className={`w-full px-4 py-3 rounded-2xl border text-sm text-right transition-all duration-300 ${active
-          ? "bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white border-[#2E7D32] shadow-md shadow-green-900/15"
-          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:shadow-sm"
+        ? "bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white border-[#2E7D32] shadow-md shadow-green-900/15"
+        : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:shadow-sm"
         }`}
     >
       {label}
@@ -1508,6 +1556,21 @@ function sensorMakeMonthOptionsAr() {
   ];
 }
 
+// Helper: dynamic update text based on selected month
+function sensorGetUpdateText(selectedMonth) {
+  const currentMonth = new Date().getMonth(); // 0-indexed, April = 3
+  const currentYear = new Date().getFullYear();
+  const months = sensorMakeMonthOptionsAr();
+  if (selectedMonth === currentMonth) return 'آخر تحديث: قبل 5 دقائق';
+  if (selectedMonth > currentMonth) return `بيانات ${months[selectedMonth]} غير متوفرة بعد`;
+  const lastDay = sensorDaysInMonth(currentYear, selectedMonth);
+  return `آخر تحديث: ${lastDay} ${months[selectedMonth]}`;
+}
+
+function sensorIsFutureMonth(selectedMonth) {
+  return selectedMonth > new Date().getMonth();
+}
+
 function sensorGenerateLineSeries({
   days,
   base,
@@ -1586,7 +1649,7 @@ function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
   return rec;
 }
 
-function SensorTopBar({ title, subtitle, icon, onBack }) {
+function SensorTopBar({ title, subtitle, icon, onBack, onExport }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -1598,14 +1661,30 @@ function SensorTopBar({ title, subtitle, icon, onBack }) {
           <div className="text-sm text-gray-500">{subtitle}</div>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onBack}
-        className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
-      >
-        <ArrowLeftIcon />
-        رجوع
-      </button>
+      <div className="flex items-center gap-2">
+        {onExport && (
+          <button
+            type="button"
+            onClick={onExport}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            تصدير
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+          رجوع
+        </button>
+      </div>
     </div>
   );
 }
@@ -1616,8 +1695,8 @@ function SensorPill({ label, active, onClick }) {
       type="button"
       onClick={onClick}
       className={`px-3 py-2 rounded-xl text-xs border transition ${active
-          ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
-          : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+        ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
+        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
         }`}
     >
       {label}
@@ -1631,8 +1710,8 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
       type="button"
       onClick={onClick}
       className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${active
-          ? "bg-[#2E7D32] text-white border-[#2E7D32]"
-          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+        ? "bg-[#2E7D32] text-white border-[#2E7D32]"
+        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
         }`}
     >
       {children}
@@ -1642,13 +1721,13 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
 
 
 function SensorBarChart2D({ data, yLabel, unit }) {
-  const pad = 36;
-  const h = 260;
+  const pad = 44;
+  const h = 320;
 
   const n = data.length;
 
   // عرض الرسم يعتمد على عدد الأعمدة (بدون حد أدنى) لتفادي السكرول
-  const barW = 10;
+  const barW = 12;
   const gap = 8;
   const w = pad * 2 + n * (barW + gap);
 
@@ -1694,8 +1773,8 @@ function SensorBarChart2D({ data, yLabel, unit }) {
                   />
                   <text
                     x={pad - 8}
-                    y={yy + 4}
-                    fontSize="10"
+                    y={yy + 5}
+                    fontSize="13"
                     fill="#6B7280"
                     textAnchor="end"
                   >
@@ -1729,11 +1808,11 @@ function SensorBarChart2D({ data, yLabel, unit }) {
                     fill={colorFor(d.value)}
                     opacity="0.95"
                   />
-                  {i % 4 === 0 ? (
+                  {i % 3 === 0 ? (
                     <text
                       x={xx + barW / 2}
-                      y={h - 12}
-                      fontSize="10"
+                      y={h - 14}
+                      fontSize="13"
                       fill="#6B7280"
                       textAnchor="middle"
                     >
@@ -1746,9 +1825,10 @@ function SensorBarChart2D({ data, yLabel, unit }) {
 
             <text
               x={w - pad}
-              y={pad - 10}
-              fontSize="11"
+              y={pad - 12}
+              fontSize="14"
               fill="#374151"
+              fontWeight="500"
               textAnchor="end"
             >
               {yLabel} {unit ? `(${unit})` : ""}
@@ -1758,24 +1838,24 @@ function SensorBarChart2D({ data, yLabel, unit }) {
       </div>
 
       {/* Legend تحت الرسم بالمنتصف */}
-      <div className="mt-3 text-center text-[11px] text-gray-500">
-        الألوان تعبّر عن مستوى الرطوبة.
+      <div className="mt-3 text-center text-[13px] text-gray-500">
+        الألوان تعبّر عن مستوى القراءة.
       </div>
 
       <div className="mt-2 w-full flex justify-center" dir="rtl">
-        <div className="flex items-center gap-4 text-[11px] text-gray-600">
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#2E7D32]" />
+        <div className="flex items-center gap-5 text-[13px] text-gray-600">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#2E7D32]" />
             <span>منخفض</span>
           </div>
 
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#FBC02D]" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#FBC02D]" />
             <span>متوسط</span>
           </div>
 
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#EF6C00]" />
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="w-3.5 h-3.5 rounded-sm bg-[#EF6C00]" />
             <span>مرتفع</span>
           </div>
         </div>
@@ -1816,6 +1896,7 @@ function TemperaturePage({ onBack }) {
           subtitle="عرض القراءة الحالية + رسم بياني شهري + تحكم"
           icon={<TempSunIcon />}
           onBack={onBack}
+          onExport={() => alert('جاري تصدير قراءات درجة الحرارة...')}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1825,7 +1906,7 @@ function TemperaturePage({ onBack }) {
                 القراءة الحالية
               </div>
               <div className="text-[13px] text-gray-500 mt-1">
-                آخر تحديث: قبل 5 دقائق
+                {sensorGetUpdateText(month)}
               </div>
             </div>
             <div className="mt-4 flex items-end justify-between">
@@ -1907,7 +1988,15 @@ function TemperaturePage({ onBack }) {
             </div>
           </div>
           <div className="mt-4">
-            <SensorBarChart2D data={series} yLabel="درجة الحرارة" unit="°C" />
+            {sensorIsFutureMonth(month) ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                <div className="mt-3 text-[15px] font-medium">بيانات {months[month]} غير متوفرة بعد</div>
+                <div className="text-[13px] mt-1">سيتم عرضها عند بداية الشهر</div>
+              </div>
+            ) : (
+              <SensorBarChart2D data={series} yLabel="درجة الحرارة" unit="°C" />
+            )}
           </div>
         </CardShell>
       </div>
@@ -1947,6 +2036,7 @@ function AirHumidityPage({ onBack }) {
           subtitle="عرض القراءة الحالية + رسم بياني شهري + تحكم"
           icon={<AirHumidityIcon />}
           onBack={onBack}
+          onExport={() => alert('جاري تصدير قراءات رطوبة الهواء...')}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1956,7 +2046,7 @@ function AirHumidityPage({ onBack }) {
                 القراءة الحالية
               </div>
               <div className="text-[13px] text-gray-500 mt-1">
-                آخر تحديث: قبل 5 دقائق
+                {sensorGetUpdateText(month)}
               </div>
             </div>
             <div className="mt-4 flex items-end justify-between">
@@ -2038,7 +2128,15 @@ function AirHumidityPage({ onBack }) {
             </div>
           </div>
           <div className="mt-4">
-            <SensorBarChart2D data={series} yLabel="نسبة الرطوبة" unit="%" />
+            {sensorIsFutureMonth(month) ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                <div className="mt-3 text-[15px] font-medium">بيانات {months[month]} غير متوفرة بعد</div>
+                <div className="text-[13px] mt-1">سيتم عرضها عند بداية الشهر</div>
+              </div>
+            ) : (
+              <SensorBarChart2D data={series} yLabel="نسبة الرطوبة" unit="%" />
+            )}
           </div>
         </CardShell>
       </div>
@@ -2095,6 +2193,7 @@ function SoilMoisturePage({ onBack }) {
           subtitle="حرارة التربة + رطوبة التربة (رسمين 2D)"
           icon={<SoilDropIcon />}
           onBack={onBack}
+          onExport={() => alert('جاري تصدير قراءات التربة...')}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -2202,11 +2301,18 @@ function SoilMoisturePage({ onBack }) {
                 </div>
               </div>
               <div className="mt-3">
-                <SensorBarChart2D
-                  data={soilTempSeries}
-                  yLabel="حرارة التربة"
-                  unit="°C"
-                />
+                {sensorIsFutureMonth(month) ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                    <div className="mt-2 text-[14px]">غير متوفرة بعد</div>
+                  </div>
+                ) : (
+                  <SensorBarChart2D
+                    data={soilTempSeries}
+                    yLabel="حرارة التربة"
+                    unit="°C"
+                  />
+                )}
               </div>
             </CardShell>
 
@@ -2220,11 +2326,18 @@ function SoilMoisturePage({ onBack }) {
                 </div>
               </div>
               <div className="mt-3">
-                <SensorBarChart2D
-                  data={soilMoistSeries}
-                  yLabel="رطوبة التربة"
-                  unit="%"
-                />
+                {sensorIsFutureMonth(month) ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                    <div className="mt-2 text-[14px]">غير متوفرة بعد</div>
+                  </div>
+                ) : (
+                  <SensorBarChart2D
+                    data={soilMoistSeries}
+                    yLabel="رطوبة التربة"
+                    unit="%"
+                  />
+                )}
               </div>
             </CardShell>
           </div>
@@ -2358,36 +2471,36 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
 
   const isRtl = language === 'ar';
   const T = {
-    profile:        isRtl ? "الحساب الشخصي"       : "Profile",
-    settings:       isRtl ? "الإعدادات"            : "Settings",
-    profileSub:     isRtl ? "بياناتك الشخصية وتفاصيل حسابك" : "Your personal details and account info",
-    settingsSub:    isRtl ? "إدارة الحساسات وخيارات التطبيق" : "Manage sensors and app preferences",
-    back:           isRtl ? "رجوع"                : "Back",
-    accountData:    isRtl ? "بيانات الحساب"       : "Account Data",
-    fullName:       isRtl ? "الاسم الكامل"         : "Full Name",
-    username:       isRtl ? "اسم المستخدم"         : "Username",
-    email:          isRtl ? "البريد الإلكتروني"    : "Email",
-    password:       isRtl ? "كلمة المرور"          : "Password",
-    edit:           isRtl ? "تعديل"               : "Edit",
-    save:           isRtl ? "حفظ"                 : "Save",
-    cancel:         isRtl ? "إلغاء"               : "Cancel",
-    sensors:        isRtl ? "الحساسات"            : "Sensors",
-    sensorsSub:     isRtl ? "إدارة الحساسات المرتبطة بالمحمية" : "Manage greenhouse sensors",
-    addSensor:      isRtl ? "إضافة حساس"          : "Add Sensor",
-    sensorName:     isRtl ? "اسم الحساس"          : "Sensor Name",
-    sensorType:     isRtl ? "نوع الحساس"          : "Sensor Type",
-    noSensors:      isRtl ? "لا توجد حساسات مضافة" : "No sensors added",
-    language:       isRtl ? "اللغة"               : "Language",
-    account:        isRtl ? "الحساب"              : "Account",
-    userGuide:      isRtl ? "دليل المستخدم"       : "User Guide",
-    userGuideSub:   isRtl ? "شرح استخدام لوحة التحكم، التنبيهات، والاختصارات." : "How to use the dashboard, alerts, and shortcuts.",
-    openGuide:      isRtl ? "فتح الدليل"          : "Open Guide",
-    logout:         isRtl ? "تسجيل الخروج"        : "Log Out",
-    logoutSub:      isRtl ? "إنهاء الجلسة الحالية بأمان." : "Safely end your current session.",
-    logoutBtn:      isRtl ? "خروج"                : "Log Out",
-    editField:      isRtl ? "تعديل"               : "Edit",
-    addSensorTitle: isRtl ? "إضافة حساس"          : "Add Sensor",
-    editSensorTitle:isRtl ? "تعديل الحساس"        : "Edit Sensor",
+    profile: isRtl ? "الحساب الشخصي" : "Profile",
+    settings: isRtl ? "الإعدادات" : "Settings",
+    profileSub: isRtl ? "بياناتك الشخصية وتفاصيل حسابك" : "Your personal details and account info",
+    settingsSub: isRtl ? "إدارة الحساسات وخيارات التطبيق" : "Manage sensors and app preferences",
+    back: isRtl ? "رجوع" : "Back",
+    accountData: isRtl ? "بيانات الحساب" : "Account Data",
+    fullName: isRtl ? "الاسم الكامل" : "Full Name",
+    username: isRtl ? "اسم المستخدم" : "Username",
+    email: isRtl ? "البريد الإلكتروني" : "Email",
+    password: isRtl ? "كلمة المرور" : "Password",
+    edit: isRtl ? "تعديل" : "Edit",
+    save: isRtl ? "حفظ" : "Save",
+    cancel: isRtl ? "إلغاء" : "Cancel",
+    sensors: isRtl ? "الحساسات" : "Sensors",
+    sensorsSub: isRtl ? "إدارة الحساسات المرتبطة بالمحمية" : "Manage greenhouse sensors",
+    addSensor: isRtl ? "إضافة حساس" : "Add Sensor",
+    sensorName: isRtl ? "اسم الحساس" : "Sensor Name",
+    sensorType: isRtl ? "نوع الحساس" : "Sensor Type",
+    noSensors: isRtl ? "لا توجد حساسات مضافة" : "No sensors added",
+    language: isRtl ? "اللغة" : "Language",
+    account: isRtl ? "الحساب" : "Account",
+    userGuide: isRtl ? "دليل المستخدم" : "User Guide",
+    userGuideSub: isRtl ? "شرح استخدام لوحة التحكم، التنبيهات، والاختصارات." : "How to use the dashboard, alerts, and shortcuts.",
+    openGuide: isRtl ? "فتح الدليل" : "Open Guide",
+    logout: isRtl ? "تسجيل الخروج" : "Log Out",
+    logoutSub: isRtl ? "إنهاء الجلسة الحالية بأمان." : "Safely end your current session.",
+    logoutBtn: isRtl ? "خروج" : "Log Out",
+    editField: isRtl ? "تعديل" : "Edit",
+    addSensorTitle: isRtl ? "إضافة حساس" : "Add Sensor",
+    editSensorTitle: isRtl ? "تعديل الحساس" : "Edit Sensor",
   };
 
   return (
@@ -2416,8 +2529,10 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
             </div>
           </div>
           <button type="button" onClick={onBack}
-            className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium">
-            <ArrowLeftIcon />
+            className="px-5 py-2.5 rounded-xl border border-gray-200 text-[15px] text-gray-600 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 flex items-center gap-2 font-medium">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
             {T.back}
           </button>
         </div>
@@ -2464,8 +2579,8 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
                 {T.edit}:{" "}
                 {editingField === "fullName" ? T.fullName
                   : editingField === "username" ? T.username
-                  : editingField === "email" ? T.email
-                  : T.password}
+                    : editingField === "email" ? T.email
+                      : T.password}
               </div>
               <button type="button" onClick={closeEdit}
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-200">
@@ -2476,12 +2591,13 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout, on
             <label className="block text-xs text-gray-600 mb-2">
               {editingField === "fullName" ? T.fullName
                 : editingField === "username" ? T.username
-                : editingField === "email" ? T.email
-                : T.password}
+                  : editingField === "email" ? T.email
+                    : T.password}
             </label>
             <input
               value={draftValue}
               onChange={(e) => setDraftValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); }}
               type={editingField === "password" ? "password" : "text"}
               className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2E7D32]"
               placeholder=""
@@ -2581,10 +2697,10 @@ function Account_ProfilePage({ profile, onEdit, T }) {
       <Account_Card>
         <div className="text-[16px] font-semibold text-gray-800 mb-4">{T.accountData}</div>
         <div className="flex flex-col gap-3">
-          <Account_EditableField label={T.fullName}  value={profile.fullName || "—"} onEdit={() => onEdit("fullName")} />
-          <Account_EditableField label={T.username}  value={profile.username}         onEdit={() => onEdit("username")} />
-          <Account_EditableField label={T.email}     value={profile.email}            onEdit={() => onEdit("email")} />
-          <Account_EditableField label={T.password}  value={profile.password}         onEdit={() => onEdit("password")} mono />
+          <Account_EditableField label={T.fullName} value={profile.fullName || "—"} onEdit={() => onEdit("fullName")} />
+          <Account_EditableField label={T.username} value={profile.username} onEdit={() => onEdit("username")} />
+          <Account_EditableField label={T.email} value={profile.email} onEdit={() => onEdit("email")} />
+          <Account_EditableField label={T.password} value={profile.password} onEdit={() => onEdit("password")} mono />
         </div>
       </Account_Card>
     </div>
@@ -2642,7 +2758,16 @@ function Account_SettingsPage({ T, language, setLanguage, sensors, onAddSensor, 
 
       {/* Language */}
       <Account_Card>
-        <div className="text-[16px] font-semibold text-gray-800 mb-4">{T.language}</div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </div>
+          <div className="text-[16px] font-semibold text-gray-800">{T.language}</div>
+        </div>
         <div className="flex gap-2">
           {[{ key: "ar", label: "عربي" }, { key: "en", label: "English" }].map(({ key, label }) => (
             <button
@@ -2740,8 +2865,8 @@ function Account_IconButton({ children, title, onClick, danger }) {
       title={title}
       onClick={onClick}
       className={`w-9 h-9 rounded-xl border flex items-center justify-center transition ${danger
-          ? "border-[#f1c2c2] hover:bg-[#fdecec]"
-          : "border-gray-200 hover:bg-gray-50"
+        ? "border-[#f1c2c2] hover:bg-[#fdecec]"
+        : "border-gray-200 hover:bg-gray-50"
         }`}
     >
       {children}

@@ -11,6 +11,7 @@ export default function SignIn({ onLogin }) {
   const [userData, setUserData] = useState({});
   const [transitioning, setTransitioning] = useState(false);
   const [direction, setDirection] = useState('forward');
+  const [lang, setLang] = useState('ar');
 
   const goTo = (target, dir = 'forward') => {
     setDirection(dir);
@@ -72,14 +73,27 @@ export default function SignIn({ onLogin }) {
                        animate-scale-in ${transitioning ? 'pointer-events-none' : ''}`}
         style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.08), 0 0 40px rgba(46,125,50,0.06)' }}>
 
+        {/* Language toggle */}
+        <button
+          onClick={() => setLang(l => l === 'ar' ? 'en' : 'ar')}
+          className="absolute top-6 left-6 flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 z-20"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          {lang === 'ar' ? 'EN' : 'ع'}
+        </button>
+
         {/* Back button */}
         {page !== 'login' && (
           <button
-            onClick={goBack}
-            className="absolute top-6 right-6 flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#2E7D32] transition-all duration-300 group"
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); goBack(); }}
+            className="absolute top-6 right-6 z-20 flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-[15px] text-gray-500 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300 font-medium cursor-pointer"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-              className="transition-transform duration-300 group-hover:translate-x-0.5">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M9 18l6-6-6-6" />
             </svg>
             رجوع
@@ -330,6 +344,7 @@ function RegisterUserPage({ onNext }) {
     const errs = {};
     if (!fullName.trim()) errs.fullName = 'الاسم الكامل مطلوب';
     if (!username.trim()) errs.username = 'اسم المستخدم مطلوب';
+    else if (!/^[a-zA-Z0-9._]+$/.test(username)) errs.username = 'اسم المستخدم يجب أن يكون بالإنجليزية (حروف، أرقام، . أو _)';
     if (!email.trim()) errs.email = 'البريد الإلكتروني مطلوب';
     else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'البريد الإلكتروني غير صحيح';
     if (!password) errs.password = 'كلمة المرور مطلوبة';
@@ -361,18 +376,23 @@ function RegisterUserPage({ onNext }) {
       </div>
 
       <InputField label="الاسم الكامل" placeholder="مثال: منصور الزهراني" value={fullName} onChange={setFullName} error={errors.fullName}
+        onKeyDown={(e) => { if (e.key === "Enter") handleNext(); }}
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg>}
       />
-      <InputField label="اسم المستخدم" placeholder="مثال: mansour123" value={username} onChange={setUsername} error={errors.username}
+      <InputField label="اسم المستخدم (بالإنجليزية)" placeholder="مثال: mansour123" value={username} onChange={(v) => setUsername(v.replace(/[^a-zA-Z0-9._]/g, ''))} error={errors.username}
+        onKeyDown={(e) => { if (e.key === "Enter") handleNext(); }}
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>}
       />
       <InputField label="البريد الإلكتروني" placeholder="example@gmail.com" type="email" value={email} onChange={setEmail} error={errors.email}
+        onKeyDown={(e) => { if (e.key === "Enter") handleNext(); }}
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>}
       />
       <InputField label="كلمة المرور" placeholder="••••••••" type="password" value={password} onChange={setPassword} error={errors.password}
+        onKeyDown={(e) => { if (e.key === "Enter") handleNext(); }}
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
       />
       <InputField label="تأكيد كلمة المرور" placeholder="••••••••" type="password" value={confirm} onChange={setConfirm} error={errors.confirm}
+        onKeyDown={(e) => { if (e.key === "Enter") handleNext(); }}
         icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
       />
 
@@ -426,19 +446,25 @@ function FarmInfoStep({ onNext }) {
 
       <div className="flex flex-col gap-1.5 text-right">
         <label className="text-sm font-medium text-gray-600">نوع المحمية</label>
-        <select value={farmType} onChange={e => setFarmType(e.target.value)} className="input-enhanced border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 appearance-none cursor-pointer">
-          <option>محمية (مغلقة)</option>
-          <option>مزرعة مفتوحة</option>
-        </select>
+        <div className="relative">
+          <select value={farmType} onChange={e => setFarmType(e.target.value)} className="input-enhanced w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 cursor-pointer">
+            <option>محمية (مغلقة)</option>
+            <option>مزرعة مفتوحة</option>
+          </select>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5 text-right">
         <label className="text-sm font-medium text-gray-600">نوع الزراعة</label>
-        <select value={cropType} onChange={e => setCropType(e.target.value)} className="input-enhanced border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 appearance-none cursor-pointer">
-          <option>زراعة طبيعية</option>
-          <option>زراعة عضوية</option>
-          <option>زراعة مائية</option>
-        </select>
+        <div className="relative">
+          <select value={cropType} onChange={e => setCropType(e.target.value)} className="input-enhanced w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 cursor-pointer">
+            <option>زراعة طبيعية</option>
+            <option>زراعة عضوية</option>
+            <option>زراعة مائية</option>
+          </select>
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
       </div>
 
       <button onClick={handleNext} className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300 mt-1">
