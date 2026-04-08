@@ -1,86 +1,186 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+/* =========================================================
+   WARIF | Sign-In & Registration Flow
+   Premium UI with animations, glassmorphism, and micro-interactions
+   ========================================================= */
 
 export default function SignIn({ onLogin }) {
   const [page, setPage] = useState('login');
   const [step, setStep] = useState(1);
   const [userData, setUserData] = useState({});
+  const [transitioning, setTransitioning] = useState(false);
+  const [direction, setDirection] = useState('forward');
+
+  const goTo = (target, dir = 'forward') => {
+    setDirection(dir);
+    setTransitioning(true);
+    setTimeout(() => {
+      if (target === 'registerFarm') {
+        setPage('registerFarm');
+        setStep(1);
+      } else {
+        setPage(target);
+      }
+      setTransitioning(false);
+    }, 250);
+  };
 
   const goBack = () => {
-    if (page === 'registerUser') setPage('login');
+    if (page === 'registerUser') goTo('login', 'back');
     else if (page === 'registerFarm') {
-      if (step === 1) setPage('registerUser');
-      else setStep(s => s - 1);
+      if (step === 1) goTo('registerUser', 'back');
+      else {
+        setDirection('back');
+        setTransitioning(true);
+        setTimeout(() => {
+          setStep(s => s - 1);
+          setTransitioning(false);
+        }, 250);
+      }
     }
   };
 
-  return (
-    <div className="w-screen h-screen flex items-center justify-center bg-[#F7F7F4]" dir="rtl">
-      <div className="bg-white w-[460px] max-w-[95vw] p-8 rounded-2xl shadow-lg flex flex-col gap-6 relative">
+  const nextStep = () => {
+    setDirection('forward');
+    setTransitioning(true);
+    setTimeout(() => {
+      setStep(s => s + 1);
+      setTransitioning(false);
+    }, 250);
+  };
 
-        {/* زر رجوع */}
+  return (
+    <div className="w-screen h-screen flex items-center justify-center overflow-hidden relative" dir="rtl"
+      style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #F7F7F4 40%, #ecfdf5 70%, #f0fdf4 100%)' }}>
+
+      {/* Floating background orbs */}
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+      <div className="orb orb-3" />
+      <div className="orb orb-4" />
+
+      {/* Subtle grid pattern */}
+      <div className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #166534 1px, transparent 1px)',
+          backgroundSize: '32px 32px'
+        }} />
+
+      {/* Main Card */}
+      <div className={`glass-strong w-[480px] max-w-[94vw] p-8 rounded-3xl flex flex-col gap-5 relative z-10
+                       animate-scale-in ${transitioning ? 'pointer-events-none' : ''}`}
+        style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.08), 0 0 40px rgba(46,125,50,0.06)' }}>
+
+        {/* Back button */}
         {page !== 'login' && (
           <button
             onClick={goBack}
-            className="absolute top-6 right-6 flex items-center gap-1 text-sm text-gray-400 hover:text-[#2E7D32] transition-all"
+            className="absolute top-6 right-6 flex items-center gap-1.5 text-sm text-gray-400 hover:text-[#2E7D32] transition-all duration-300 group"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M9 18l6-6-6-6"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className="transition-transform duration-300 group-hover:translate-x-0.5">
+              <path d="M9 18l6-6-6-6" />
             </svg>
             رجوع
           </button>
         )}
 
-        {/* مؤشر الخطوات */}
+        {/* Step indicator */}
         {page === 'registerFarm' && (
-          <div className="flex items-center justify-center gap-2 mt-2">
+          <div className="flex items-center justify-center gap-3 mt-2 animate-fade-in">
             {[1, 2, 3].map(s => (
-              <div key={s} className={`h-1.5 rounded-full transition-all ${
-                s === step ? 'w-8 bg-[#2E7D32]' : s < step ? 'w-4 bg-[#81C784]' : 'w-4 bg-gray-200'
-              }`} />
+              <div key={s} className="relative">
+                <div className={`h-2 rounded-full transition-all duration-500 ease-out ${s === step ? 'w-10 bg-gradient-to-l from-[#2E7D32] to-[#4ade80]' :
+                    s < step ? 'w-5 bg-[#81C784]' : 'w-5 bg-gray-200'
+                  }`} />
+                {s === step && (
+                  <div className="absolute inset-0 h-2 rounded-full bg-gradient-to-l from-[#2E7D32] to-[#4ade80] opacity-40 blur-sm" />
+                )}
+              </div>
             ))}
           </div>
         )}
 
-        {/* الصفحات */}
-        {page === 'login' && (
-          <LoginPage
-            onLogin={onLogin}
-            onNewUser={() => setPage('registerUser')}
-          />
-        )}
-        {page === 'registerUser' && (
-          <RegisterUserPage
-            onNext={(data) => { setUserData(data); setPage('registerFarm'); setStep(1); }}
-          />
-        )}
-        {page === 'registerFarm' && (
-          <>
-            {step === 1 && <FarmInfoStep onNext={(data) => { setUserData(d => ({...d, ...data})); setStep(2); }} />}
-            {step === 2 && <SensorSelectionStep onNext={(data) => { setUserData(d => ({...d, ...data})); setStep(3); }} onBack={() => setStep(1)} />}
-            {step === 3 && <DeviceScanPage onBack={() => setStep(2)} onFinish={onLogin} />}
-          </>
-        )}
+        {/* Page content with transitions */}
+        <div className={`transition-all duration-250 ${transitioning
+            ? direction === 'forward'
+              ? 'opacity-0 translate-x-[-20px]'
+              : 'opacity-0 translate-x-[20px]'
+            : 'opacity-100 translate-x-0'
+          }`}>
+          {page === 'login' && (
+            <LoginPage
+              onLogin={onLogin}
+              onNewUser={() => goTo('registerUser')}
+            />
+          )}
+          {page === 'registerUser' && (
+            <RegisterUserPage
+              onNext={(data) => { setUserData(data); goTo('registerFarm'); }}
+            />
+          )}
+          {page === 'registerFarm' && (
+            <>
+              {step === 1 && <FarmInfoStep onNext={(data) => { setUserData(d => ({ ...d, ...data })); nextStep(); }} />}
+              {step === 2 && <SensorSelectionStep onNext={(data) => { setUserData(d => ({ ...d, ...data })); nextStep(); }} />}
+              {step === 3 && <DeviceScanPage onFinish={onLogin} />}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 /* ----------------------------- INPUT FIELD ----------------------------- */
-function InputField({ label, placeholder, type = "text", value, onChange, error, onKeyDown }) {
+function InputField({ label, placeholder, type = "text", value, onChange, error, onKeyDown, icon }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+
   return (
-    <div className="flex flex-col gap-1 text-right">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        onKeyDown={onKeyDown}
-        className={`border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#81C784] transition-all ${
-          error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50 focus:bg-white'
-        }`}
-        placeholder={placeholder}
-      />
-      {error && <span className="text-xs text-red-500 mt-0.5">{error}</span>}
+    <div className="flex flex-col gap-1.5 text-right animate-fade-in-up">
+      <label className="text-sm font-medium text-gray-600">{label}</label>
+      <div className="relative">
+        {icon && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            {icon}
+          </div>
+        )}
+        <input
+          type={isPassword && showPassword ? "text" : type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onKeyDown={onKeyDown}
+          className={`input-enhanced w-full border rounded-xl py-3 text-sm focus:outline-none transition-all duration-300 ${icon ? 'pr-10 pl-4' : 'px-4'
+            } ${error ? 'border-red-300 bg-red-50/50' : 'border-gray-200 bg-gray-50/50 focus:bg-white'
+            }`}
+          placeholder={placeholder}
+        />
+        {isPassword && value && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            {showPassword ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
+      <div className={`overflow-hidden transition-all duration-300 ${error ? 'max-h-6 opacity-100' : 'max-h-0 opacity-0'}`}>
+        <span className="text-xs text-red-500">{error}</span>
+      </div>
     </div>
   );
 }
@@ -106,93 +206,112 @@ function LoginPage({ onLogin, onNewUser }) {
   const validate = () => {
     const errs = {};
     const savedUser = JSON.parse(localStorage.getItem('warif_user') || '{}');
-  
     if (!username.trim()) errs.username = 'اسم المستخدم مطلوب';
-    else if (username !== 'admin' && username !== savedUser.username) 
-       errs.username = 'اسم المستخدم غير صحيح';
-  
+    else if (username !== 'admin' && username !== savedUser.username)
+      errs.username = 'اسم المستخدم غير صحيح';
     if (!password) errs.password = 'كلمة المرور مطلوبة';
-    else if (username === 'admin' && password !== '123456') 
-       errs.password = 'كلمة المرور غير صحيحة';
-    else if (username === savedUser.username && password !== savedUser.password) 
-       errs.password = 'كلمة المرور غير صحيحة';
-  
+    else if (username === 'admin' && password !== '123456')
+      errs.password = 'كلمة المرور غير صحيحة';
+    else if (username === savedUser.username && password !== savedUser.password)
+      errs.password = 'كلمة المرور غير صحيحة';
     return errs;
   };
 
   const handleLogin = () => {
-    console.log('username:', username, 'password:', password); // للتشخيص
     const errs = validate();
-    console.log('errors:', errs); // للتشخيص
-
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-
     if (remember) {
       localStorage.setItem('warif_remember', JSON.stringify({ username, password }));
     } else {
       localStorage.removeItem('warif_remember');
-    } 
-
+    }
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 800);
+    setTimeout(() => { setLoading(false); onLogin(); }, 1000);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleLogin();
-    }
-  };   
+    if (e.key === "Enter") handleLogin();
+  };
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="text-center">
-        <img src="/logo.png" alt="وارِف" className="w-28 h-28 object-contain mx-auto" />
-        <p className="text-sm text-gray-400 mt-1">نظام إدارة المحميات الزراعية</p>
+      {/* Logo */}
+      <div className="text-center animate-fade-in-up">
+        <div className="animate-float inline-block">
+          <img src="/logo.png" alt="وارِف" className="w-28 h-28 object-contain mx-auto drop-shadow-lg" />
+        </div>
+        <p className="text-sm text-gray-400 mt-2 tracking-wide">نظام إدارة المحميات الزراعية</p>
       </div>
 
-      <h1 className="text-lg font-semibold text-center text-gray-700">تسجيل الدخول</h1>
+      <h1 className="text-lg font-bold text-center text-gray-800 animate-fade-in-up delay-1">تسجيل الدخول</h1>
 
       <div className="flex flex-col gap-3">
-        <InputField
-          label="اسم المستخدم"
-          placeholder="مثال: mansour123"
-          type="text"
-          value={username}
-          onChange={setUsername}
-          onKeyDown={handleKeyDown}
-          error={errors.username}
-        />
-        <InputField
-          label="كلمة المرور"
-          placeholder="••••••••"
-          type="password"
-          value={password}
-          onChange={setPassword}
-          onKeyDown={handleKeyDown}
-          error={errors.password}
-        />
-      </div>
-
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setRemember(!remember)}>
-        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${
-          remember ? 'bg-[#2E7D32] border-[#2E7D32]' : 'border-gray-300'
-        }`}>
-          {remember && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+        <div className="delay-2" style={{ animationFillMode: 'both' }}>
+          <InputField
+            label="اسم المستخدم"
+            placeholder="مثال: mansour123"
+            type="text"
+            value={username}
+            onChange={v => { setUsername(v); setErrors(e => ({ ...e, username: '' })); }}
+            onKeyDown={handleKeyDown}
+            error={errors.username}
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg>}
+          />
         </div>
-        <span className="text-sm text-gray-600">تذكر بيانات الدخول</span>
+        <div className="delay-3" style={{ animationFillMode: 'both' }}>
+          <InputField
+            label="كلمة المرور"
+            placeholder="••••••••"
+            type="password"
+            value={password}
+            onChange={v => { setPassword(v); setErrors(e => ({ ...e, password: '' })); }}
+            onKeyDown={handleKeyDown}
+            error={errors.password}
+            icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
+          />
+        </div>
       </div>
 
+      {/* Remember me */}
+      <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => setRemember(!remember)}>
+        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-300 ${remember ? 'bg-[#2E7D32] border-[#2E7D32] scale-105' : 'border-gray-300 group-hover:border-[#81C784]'
+          }`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"
+            className={`transition-all duration-300 ${remember ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
+            <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">تذكر بيانات الدخول</span>
+      </div>
+
+      {/* Login button */}
       <button
         onClick={handleLogin}
         disabled={loading}
-        className="w-full py-3 bg-[#2E7D32] text-white rounded-xl font-medium text-base hover:bg-[#256a29] transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+        className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl font-semibold text-base hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300 disabled:opacity-70 flex items-center justify-center gap-2"
       >
-        {loading && <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>}
-        {loading ? 'جاري الدخول...' : 'دخول'}
+        {loading ? (
+          <>
+            <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+            </svg>
+            <span className="animate-pulse">جاري الدخول...</span>
+          </>
+        ) : (
+          <>
+            دخول
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              className="transition-transform duration-300 group-hover:-translate-x-1">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </>
+        )}
       </button>
 
-      <button onClick={onNewUser} className="text-sm text-gray-400 hover:text-[#2E7D32] text-center transition-all">
-        ليس لديك حساب؟ <span className="text-[#2E7D32] font-medium">سجّل الآن</span>
+      {/* Register link */}
+      <button onClick={onNewUser} className="text-sm text-gray-400 hover:text-[#2E7D32] text-center transition-all duration-300 group">
+        ليس لديك حساب؟ <span className="text-[#2E7D32] font-semibold group-hover:underline underline-offset-4">سجّل الآن</span>
       </button>
     </div>
   );
@@ -209,89 +328,64 @@ function RegisterUserPage({ onNext }) {
 
   const validate = () => {
     const errs = {};
-    const savedUser = JSON.parse(localStorage.getItem('warif_user') || '{}');
-
-    if (!username.trim()) {
-      errs.username = 'اسم المستخدم مطلوب';
-    } else if (username !== 'admin' && username !== savedUser.username) {
-      errs.username = 'اسم المستخدم غير صحيح';
-    }
-
-    if (!password) {
-      errs.password = 'كلمة المرور مطلوبة';
-    } else if (username === 'admin' && password !== '123456') {
-      errs.password = 'كلمة المرور غير صحيحة';
-    } else if (username === savedUser.username && password !== savedUser.password) {
-      errs.password = 'كلمة المرور غير صحيحة';
-    } else if (username !== 'admin' && username !== savedUser.username) {
-      errs.username = 'اسم المستخدم غير صحيح';
-    }
+    if (!fullName.trim()) errs.fullName = 'الاسم الكامل مطلوب';
+    if (!username.trim()) errs.username = 'اسم المستخدم مطلوب';
+    if (!email.trim()) errs.email = 'البريد الإلكتروني مطلوب';
+    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = 'البريد الإلكتروني غير صحيح';
+    if (!password) errs.password = 'كلمة المرور مطلوبة';
+    else if (password.length < 6) errs.password = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+    if (password !== confirm) errs.confirm = 'كلمتا المرور غير متطابقتين';
     return errs;
   };
 
   const handleNext = () => {
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }     
-  // حفظ بيانات المستخدم
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     localStorage.setItem('warif_user', JSON.stringify({ fullName, username, email, password }));
     onNext({ fullName, username, email, password });
   };
 
   return (
     <div className="flex flex-col gap-3 mt-4">
-      <div className="text-center">
-        <h1 className="text-xl font-semibold text-gray-800">إنشاء حساب جديد</h1>
+      <div className="text-center animate-fade-in-up">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2E7D32] to-[#4ade80] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-green-900/15">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <line x1="19" y1="8" x2="19" y2="14" />
+            <line x1="22" y1="11" x2="16" y2="11" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-gray-800">إنشاء حساب جديد</h1>
         <p className="text-sm text-gray-400 mt-1">أدخل بياناتك للبدء</p>
       </div>
 
-      <InputField
-        label="الاسم الكامل"
-        placeholder="مثال: منصور الزهراني"
-        value={fullName}
-        onChange={setFullName}
-        error={errors.fullName}
+      <InputField label="الاسم الكامل" placeholder="مثال: منصور الزهراني" value={fullName} onChange={setFullName} error={errors.fullName}
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg>}
       />
-      <InputField
-        label="اسم المستخدم"
-        placeholder="مثال: mansour123"
-        value={username}
-        onChange={setUsername}
-        error={errors.username}
+      <InputField label="اسم المستخدم" placeholder="مثال: mansour123" value={username} onChange={setUsername} error={errors.username}
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>}
       />
-      <InputField
-        label="البريد الإلكتروني"
-        placeholder="example@gmail.com"
-        type="email"
-        value={email}
-        onChange={setEmail}
-        error={errors.email}
+      <InputField label="البريد الإلكتروني" placeholder="example@gmail.com" type="email" value={email} onChange={setEmail} error={errors.email}
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>}
       />
-      <InputField
-        label="كلمة المرور"
-        placeholder="••••••••"
-        type="password"
-        value={password}
-        onChange={setPassword}
-        error={errors.password}
+      <InputField label="كلمة المرور" placeholder="••••••••" type="password" value={password} onChange={setPassword} error={errors.password}
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>}
       />
-      <InputField
-        label="تأكيد كلمة المرور"
-        placeholder="••••••••"
-        type="password"
-        value={confirm}
-        onChange={setConfirm}
-        error={errors.confirm}
+      <InputField label="تأكيد كلمة المرور" placeholder="••••••••" type="password" value={confirm} onChange={setConfirm} error={errors.confirm}
+        icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
       />
 
       <button
         onClick={handleNext}
-        className="w-full py-3 bg-[#2E7D32] text-white rounded-xl font-medium hover:bg-[#256a29] transition-all mt-2"
+        className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300 mt-1"
       >
         التالي
       </button>
     </div>
   );
 }
+
 /* ----------------------------- FARM INFO ----------------------------- */
 function FarmInfoStep({ onNext }) {
   const [farmType, setFarmType] = useState('محمية (مغلقة)');
@@ -306,40 +400,48 @@ function FarmInfoStep({ onNext }) {
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <div className="text-center">
-        <h1 className="text-xl font-semibold text-gray-800">معلومات المحمية</h1>
+      <div className="text-center animate-fade-in-up">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2E7D32] to-[#4ade80] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-green-900/15">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-gray-800">معلومات المحمية</h1>
         <p className="text-sm text-gray-400 mt-1">الخطوة ١ من ٣</p>
       </div>
 
-      <div className="flex flex-col gap-1 text-right">
-        <label className="text-sm font-medium text-gray-700">اسم المحمية</label>
+      <div className="flex flex-col gap-1.5 text-right">
+        <label className="text-sm font-medium text-gray-600">اسم المحمية</label>
         <input
           value={farmName}
           onChange={e => { setFarmName(e.target.value); setError(''); }}
-          className={`border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#81C784] bg-gray-50 ${error ? 'border-red-300' : 'border-gray-200'}`}
+          className={`input-enhanced border rounded-xl px-4 py-3 text-sm focus:outline-none bg-gray-50/50 transition-all duration-300 ${error ? 'border-red-300' : 'border-gray-200'}`}
           placeholder="مثال: محمية الخضروات"
         />
-        {error && <span className="text-xs text-red-500">{error}</span>}
+        <div className={`overflow-hidden transition-all duration-300 ${error ? 'max-h-6 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <span className="text-xs text-red-500">{error}</span>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1 text-right">
-        <label className="text-sm font-medium text-gray-700">نوع المحمية</label>
-        <select value={farmType} onChange={e => setFarmType(e.target.value)} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#81C784]">
+      <div className="flex flex-col gap-1.5 text-right">
+        <label className="text-sm font-medium text-gray-600">نوع المحمية</label>
+        <select value={farmType} onChange={e => setFarmType(e.target.value)} className="input-enhanced border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 appearance-none cursor-pointer">
           <option>محمية (مغلقة)</option>
           <option>مزرعة مفتوحة</option>
         </select>
       </div>
 
-      <div className="flex flex-col gap-1 text-right">
-        <label className="text-sm font-medium text-gray-700">نوع الزراعة</label>
-        <select value={cropType} onChange={e => setCropType(e.target.value)} className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#81C784]">
+      <div className="flex flex-col gap-1.5 text-right">
+        <label className="text-sm font-medium text-gray-600">نوع الزراعة</label>
+        <select value={cropType} onChange={e => setCropType(e.target.value)} className="input-enhanced border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300 appearance-none cursor-pointer">
           <option>زراعة طبيعية</option>
           <option>زراعة عضوية</option>
           <option>زراعة مائية</option>
         </select>
       </div>
 
-      <button onClick={handleNext} className="w-full py-3 bg-[#2E7D32] text-white rounded-xl font-medium hover:bg-[#256a29] transition-all mt-2">
+      <button onClick={handleNext} className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300 mt-1">
         متابعة
       </button>
     </div>
@@ -347,12 +449,12 @@ function FarmInfoStep({ onNext }) {
 }
 
 /* ----------------------------- SENSOR SELECTION ----------------------------- */
-function SensorSelectionStep({ onNext, onBack }) {
+function SensorSelectionStep({ onNext }) {
   const devices = [
-    { name: "حساس الحرارة", icon: "🌡️", key: "temp" },
-    { name: "حساس الرطوبة", icon: "💧", key: "humidity" },
-    { name: "حساس التربة", icon: "🪴", key: "soil" },
-    { name: "نظام الري", icon: "🚿", key: "irrigation" }
+    { name: "حساس الحرارة", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="#fee2e2" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>, key: "temp", desc: "مراقبة درجة الحرارة" },
+    { name: "حساس الرطوبة", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>, key: "humidity", desc: "رطوبة الهواء" },
+    { name: "حساس التربة", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>, key: "soil", desc: "رطوبة التربة" },
+    { name: "نظام الري", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="#ccfbf1" stroke="#0d9488" strokeWidth="2" strokeLinecap="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>, key: "irrigation", desc: "التحكم بالري" }
   ];
   const [selected, setSelected] = useState([]);
 
@@ -362,123 +464,176 @@ function SensorSelectionStep({ onNext, onBack }) {
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <div className="text-center">
-        <h1 className="text-xl font-semibold text-gray-800">اختر الأجهزة</h1>
+      <div className="text-center animate-fade-in-up">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2E7D32] to-[#4ade80] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-green-900/15">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            <path d="M4 11a8 8 0 0 1 16 0" />
+            <path d="M8 11a4 4 0 0 1 8 0" />
+            <circle cx="12" cy="11" r="1.5" />
+            <path d="M12 13v7" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-bold text-gray-800">اختر الأجهزة</h1>
         <p className="text-sm text-gray-400 mt-1">الخطوة ٢ من ٣ — اختر الأجهزة المتوفرة لديك</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {devices.map(d => (
+        {devices.map((d, i) => (
           <button
             key={d.key}
             onClick={() => toggle(d.key)}
-            className={`border rounded-xl p-4 flex flex-col items-center gap-2 transition-all ${
-              selected.includes(d.key)
-                ? 'border-[#2E7D32] bg-[#f0fdf4] text-[#2E7D32]'
-                : 'border-gray-200 hover:border-gray-300 text-gray-600'
-            }`}
+            className={`card-interactive border rounded-2xl p-4 flex flex-col items-center gap-2 transition-all duration-300 animate-scale-bounce`}
+            style={{ animationDelay: `${i * 80}ms` }}
           >
-            <span className="text-2xl">{d.icon}</span>
-            <span className="text-sm font-medium">{d.name}</span>
-            {selected.includes(d.key) && (
-              <div className="w-4 h-4 rounded-full bg-[#2E7D32] flex items-center justify-center">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
-              </div>
-            )}
+            <div className="mb-1" style={{
+              opacity: selected.includes(d.key) ? 1 : 0.5,
+              transition: 'opacity 300ms ease'
+            }}>{d.icon}</div>
+            <span className={`text-sm font-semibold transition-colors duration-300 ${selected.includes(d.key) ? 'text-[#2E7D32]' : 'text-gray-600'
+              }`}>{d.name}</span>
+            <span className="text-[11px] text-gray-400">{d.desc}</span>
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all duration-300 ${selected.includes(d.key)
+                ? 'bg-[#2E7D32] scale-100'
+                : 'bg-gray-200 scale-90'
+              }`} style={{
+                borderColor: selected.includes(d.key) ? '#2E7D32' : '#e5e7eb',
+                borderWidth: '2px'
+              }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"
+                className={`transition-all duration-300 ${selected.includes(d.key) ? 'opacity-100 scale-100' : 'opacity-0 scale-50'}`}>
+                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </button>
         ))}
       </div>
 
       {selected.length === 0 && (
-        <p className="text-xs text-gray-400 text-center">يمكنك إضافة الأجهزة لاحقاً من الإعدادات</p>
+        <p className="text-xs text-gray-400 text-center animate-fade-in">يمكنك إضافة الأجهزة لاحقاً من الإعدادات</p>
       )}
 
-      <div className="flex gap-3">
-        <button onClick={() => onNext({ sensors: selected })} className="flex-1 py-3 bg-[#2E7D32] text-white rounded-xl text-sm font-medium hover:bg-[#256a29] transition-all">متابعة</button>
-      </div>
+      <button onClick={() => onNext({ sensors: selected })} className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300">
+        متابعة
+      </button>
     </div>
   );
 }
 
 /* ----------------------------- DEVICE SCAN ----------------------------- */
-function DeviceScanPage({ onBack, onFinish }) {
+function DeviceScanPage({ onFinish }) {
   const [permissions, setPermissions] = useState({ wifi: true, bluetooth: false, location: false });
   const [selectedDevice, setSelectedDevice] = useState('');
   const [deviceName, setDeviceName] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [scanDone, setScanDone] = useState(false);
 
   const devices = ['Sensor_A1', 'Sensor_B7', 'Irrigation_X2'];
 
   const handleScan = () => {
     setScanning(true);
-    setTimeout(() => setScanning(false), 1500);
+    setScanDone(false);
+    setTimeout(() => {
+      setScanning(false);
+      setScanDone(true);
+    }, 2000);
   };
 
   return (
     <div className="flex flex-col gap-4 mt-4">
-      <div className="text-center">
-        <h1 className="text-xl font-semibold text-gray-800">ربط الأجهزة</h1>
+      <div className="text-center animate-fade-in-up">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2E7D32] to-[#4ade80] flex items-center justify-center mx-auto mb-3 shadow-lg shadow-green-900/15 relative">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+            <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+            <circle cx="12" cy="20" r="1" />
+          </svg>
+          {scanning && (
+            <>
+              <div className="absolute inset-0 rounded-2xl border-2 border-[#4ade80] animate-ping opacity-30" />
+            </>
+          )}
+        </div>
+        <h1 className="text-xl font-bold text-gray-800">ربط الأجهزة</h1>
         <p className="text-sm text-gray-400 mt-1">الخطوة ٣ من ٣ — ابحث عن الأجهزة القريبة</p>
       </div>
 
-      {/* الأذونات */}
+      {/* Permissions */}
       <div className="flex flex-col gap-2">
-        {Object.entries({ wifi: 'Wi-Fi', bluetooth: 'البلوتوث', location: 'الموقع الجغرافي' }).map(([key, label]) => (
-          <div key={key} className="flex justify-between items-center border border-gray-100 rounded-xl px-4 py-2.5 bg-gray-50">
+        {Object.entries({ wifi: 'Wi-Fi', bluetooth: 'البلوتوث', location: 'الموقع الجغرافي' }).map(([key, label], i) => (
+          <div key={key} className="flex justify-between items-center border border-gray-100 rounded-xl px-4 py-3 bg-gray-50/50 animate-fade-in-up"
+            style={{ animationDelay: `${i * 80}ms` }}>
             <span className="text-sm text-gray-700">{label}</span>
             <button
               onClick={() => setPermissions(p => ({ ...p, [key]: !p[key] }))}
-              className={`w-10 h-6 rounded-full transition-all relative ${permissions[key] ? 'bg-[#2E7D32]' : 'bg-gray-200'}`}
+              className={`toggle-track w-11 h-6 rounded-full transition-all duration-300 relative ${permissions[key] ? 'bg-[#2E7D32]' : 'bg-gray-200'}`}
             >
-              <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${permissions[key] ? 'left-5' : 'left-1'}`} />
+              <div className={`toggle-thumb w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm transition-all duration-300 ${permissions[key] ? 'left-5.5 translate-x-0' : 'left-0.5'}`}
+                style={{ left: permissions[key] ? '22px' : '2px' }} />
             </button>
           </div>
         ))}
       </div>
 
-      {/* البحث */}
-      <button onClick={handleScan} className="flex items-center justify-center gap-2 py-2.5 border border-[#2E7D32] text-[#2E7D32] rounded-xl text-sm hover:bg-[#f0fdf4] transition-all">
+      {/* Scan button */}
+      <button onClick={handleScan} disabled={scanning}
+        className="flex items-center justify-center gap-2 py-3 border-2 border-[#2E7D32] text-[#2E7D32] rounded-xl text-sm font-semibold hover:bg-[#f0fdf4] transition-all duration-300 relative overflow-hidden disabled:opacity-60">
         {scanning ? (
-          <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+          <>
+            <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+            </svg>
+            <span className="animate-pulse">جاري البحث...</span>
+          </>
         ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+            </svg>
+            بحث عن الأجهزة
+          </>
         )}
-        {scanning ? 'جاري البحث...' : 'بحث عن الأجهزة'}
       </button>
 
-      {/* الأجهزة المتاحة */}
+      {/* Device list */}
       <div className="border border-gray-100 rounded-xl overflow-hidden">
-        <p className="text-xs text-gray-400 px-3 py-2 border-b border-gray-100 bg-gray-50">الأجهزة المتاحة</p>
-        {devices.map(d => (
+        <p className="text-xs text-gray-400 px-4 py-2.5 border-b border-gray-100 bg-gray-50/80 font-medium">الأجهزة المتاحة</p>
+        {devices.map((d, i) => (
           <button
             key={d}
             onClick={() => setSelectedDevice(d)}
-            className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-right border-b border-gray-50 last:border-0 transition-all ${
-              selectedDevice === d ? 'bg-[#f0fdf4] text-[#2E7D32]' : 'hover:bg-gray-50 text-gray-700'
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-right border-b border-gray-50 last:border-0 transition-all duration-300 animate-fade-in-up ${selectedDevice === d ? 'bg-[#f0fdf4] text-[#2E7D32]' : 'hover:bg-gray-50 text-gray-700'
+              }`}
+            style={{ animationDelay: scanDone ? `${i * 100}ms` : '0ms' }}
           >
-            <div className={`w-2 h-2 rounded-full ${selectedDevice === d ? 'bg-[#2E7D32]' : 'bg-gray-300'}`} />
-            {d}
+            <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${selectedDevice === d ? 'bg-[#2E7D32] shadow-sm shadow-green-400/50' : 'bg-gray-300'
+              }`} />
+            <span className="font-medium">{d}</span>
+            {selectedDevice === d && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" className="mr-auto animate-scale-in">
+                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
           </button>
         ))}
       </div>
 
-      {/* اسم الجهاز */}
-      <div className="flex flex-col gap-1 text-right">
-        <label className="text-sm font-medium text-gray-700">اسم الجهاز (اختياري)</label>
+      {/* Device name */}
+      <div className="flex flex-col gap-1.5 text-right">
+        <label className="text-sm font-medium text-gray-600">اسم الجهاز (اختياري)</label>
         <input
           value={deviceName}
           onChange={e => setDeviceName(e.target.value)}
-          className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#81C784]"
-          placeholder="مثال: حساس التربة - المحمية 1"
+          className="input-enhanced border border-gray-200 rounded-xl px-4 py-3 text-sm bg-gray-50/50 focus:outline-none transition-all duration-300"
+          placeholder="مثال: حساس التربة – المحمية 1"
         />
       </div>
 
-      <div className="flex gap-3">
-        <button onClick={onFinish} className="flex-1 py-3 bg-[#2E7D32] text-white rounded-xl text-sm font-medium hover:bg-[#256a29] transition-all">
-          {selectedDevice ? 'ربط والدخول' : 'تخطي والدخول'}
-        </button>
-      </div>
+      <button onClick={onFinish}
+        className="btn-primary w-full py-3.5 bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-900/20 transition-all duration-300">
+        {selectedDevice ? 'ربط والدخول' : 'تخطي والدخول'}
+      </button>
     </div>
   );
 }

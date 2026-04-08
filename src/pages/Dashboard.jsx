@@ -14,7 +14,7 @@ export default function Dashboard({ onLogout }) {
     const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
     if (saved.fullName) setUserFullName(saved.fullName);
   }, []);
-  
+
   const [showChat, setShowChat] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { role: "bot", text: "مرحباً منصور! أنا مساعدك الذكي. كيف أساعدك اليوم؟" }
@@ -32,7 +32,7 @@ export default function Dashboard({ onLogout }) {
 
   const sendToAI = async (userMessage) => {
     setChatMessages(prev => [...prev, { role: "user", text: userMessage }]);
-    setChatMessages(prev => [...prev, { role: "bot", text: "⏳ جاري التفكير..." }]);
+    setChatMessages(prev => [...prev, { role: "bot", text: "جاري التفكير..." }]);
 
     try {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -83,71 +83,69 @@ export default function Dashboard({ onLogout }) {
     >
       <div className="w-full h-full flex flex-col">
         {/* ================= Header ================= */}
-        <header className="w-full h-16 bg-white border-b border-gray-100 flex items-center justify-between px-5 flex-shrink-0 z-10">
+        <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-5 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
           {/* Right: Logo + Temp + Time */}
           <div className="flex items-center gap-4">
             <div className="w-px h-4 bg-gray-100" />
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-1.5 text-sm text-gray-500">
               <span>درجة الحرارة</span>
               <span className="font-semibold text-[#ea580c]">31°C</span>
-              <span>☀️</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
             </div>
             <div className="w-px h-4 bg-gray-100" />
             <div className="text-sm text-gray-400">
-              آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute:'2-digit'})}</span>
+              آخر تحديث: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
           </div>
 
           {/* Left: Irrigation mode + alerts + user */}
-        
-          <div className="flex items-center gap-3">
-          {/* Alert */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c] animate-pulse" />
-            حرارة مرتفعة
-          </div>
 
-          {/* Connected sensors */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
-           <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
-           3 حساسات متصلة
-          </div>
+          <div className="flex items-center gap-3">
+            {/* Alert */}
+            <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ea580c] animate-pulse" />
+              حرارة مرتفعة
+            </div>
+
+            {/* Connected sensors */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
+              3 حساسات متصلة
+            </div>
 
 
             {/* Irrigation toggle */}
-          <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{width: '110px'}}>
-           <button
-             onClick={() => setMode("auto")}
-             className={`flex-1 py-1 text-center text-xs font-medium transition-all ${
-               mode === "auto"
-               ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
-               : "text-gray-400"
-             }`}
-           >
-             تلقائي
-           </button>
-           <button
-             onClick={() => setMode("manual")}
-             className={`flex-1 py-1 text-center text-xs font-medium transition-all ${
-               mode === "manual"
-               ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
-               : "text-gray-400"
-             }`}
-           >
-             يدوي
-           </button>
-          </div>
+            <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '110px' }}>
+              <button
+                onClick={() => setMode("auto")}
+                className={`flex-1 py-1 text-center text-xs font-medium transition-all ${mode === "auto"
+                    ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
+                    : "text-gray-400"
+                  }`}
+              >
+                تلقائي
+              </button>
+              <button
+                onClick={() => setMode("manual")}
+                className={`flex-1 py-1 text-center text-xs font-medium transition-all ${mode === "manual"
+                    ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
+                    : "text-gray-400"
+                  }`}
+              >
+                يدوي
+              </button>
+            </div>
 
             {/* User dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-s text-gray-600 bg-gray-50 hover:bg-gray-100 transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-s text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
               >
                 <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="8" r="4"/>
-                    <path d="M6 20c0-4 3-6 6-6s6 2 6 6"/>
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M6 20c0-4 3-6 6-6s6 2 6 6" />
                   </svg>
                 </div>
                 {userFullName || 'المستخدم'}
@@ -155,178 +153,188 @@ export default function Dashboard({ onLogout }) {
               </button>
 
               {showUserMenu && (
-               <div className="absolute left-0 top-full mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
-                 <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
-                   👤 الحساب الشخصي
-                 </button>
-                 <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
-                   ⚙️ الإعدادات
-                   </button>
-                 <button
+                <div className="absolute left-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top left' }}>
+                  <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> الحساب الشخصي
+                  </button>
+                  <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> الإعدادات
+                  </button>
+                  <button
                     onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
-                    🚪 تسجيل الخروج
-                 </button>
-               </div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> تسجيل الخروج
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        {/* ================= Body with Persistent Sidebar ================= */}
+        <main className="flex-1 min-h-0 flex">
+          {/* Sidebar — always visible */}
+          <Sidebar currentPage={page} onGo={go} />
+
+          {/* Content Area */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            {page === "dashboard" ? (
+              <DashboardHome onGo={go} onSendAI={sendToAI} />
+            ) : page === "recs" ? (
+              <RecommendationsPage onBack={() => go("dashboard")} />
+            ) : page === "irrigation" ? (
+              <IrrigationPage onBack={() => go("dashboard")} />
+            ) : page === "temp" ? (
+              <TemperaturePage onBack={() => go("dashboard")} />
+            ) : page === "airHumidity" ? (
+              <AirHumidityPage onBack={() => go("dashboard")} />
+            ) : page === "soilMoisture" ? (
+              <SoilMoisturePage onBack={() => go("dashboard")} />
+            ) : page === "profile" ? (
+              <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} />
+            ) : page === "settings" ? (
+              <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} />
+            ) : (
+              <PlaceholderPage page={page} onBack={() => go("dashboard")} />
             )}
           </div>
-        </div>
-      </header>
-
-        {/* ================= Body ================= */}
-        <main className="flex-1 min-h-0">
-          {page === "dashboard" ? (
-            <DashboardHome onGo={go} onSendAI={sendToAI} />
-          ) : page === "recs" ? (
-            <RecommendationsPage onBack={() => go("dashboard")} />
-          ) : page === "irrigation" ? (
-            <IrrigationPage onBack={() => go("dashboard")} />
-          ) : page === "temp" ? (
-            <TemperaturePage onBack={() => go("dashboard")} />
-          ) : page === "airHumidity" ? (
-            <AirHumidityPage onBack={() => go("dashboard")} />
-          ) : page === "soilMoisture" ? (
-            <SoilMoisturePage onBack={() => go("dashboard")} />
-          ) : page === "profile" ? (
-            <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} />
-          ) : page === "settings" ? (
-            <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} />
-          ) : (
-            <PlaceholderPage page={page} onBack={() => go("dashboard")} />
-          )}
         </main>
 
-    {/* Chatbot FAB */}
-    <button
-      onClick={() => setShowChat(!showChat)}
-      className="fixed bottom-6 left-6 w-20 h-20 bg-[#16a34a] rounded-full flex items-center justify-center shadow-lg hover:bg-[#15803d] transition-all z-50"
-    >
-      {showChat ? (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      ) : (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      )}
-    </button>
-
-    {showChat && (
-      <div className="fixed bottom-20 left-6 w-72 h-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden z-50">
-        <div className="bg-[#16a34a] px-4 py-3 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center text-lg">🤖</div>
-          <div>
-            <div className="text-white font-semibold text-sm">مساعد وارِف</div>
-            <div className="text-white/70 text-xs">يساعد في الاستفسارات والخدمات الزراعية
-</div>
+        {/* Chatbot FAB */}
+        <button
+          onClick={() => setShowChat(!showChat)}
+          className={`fixed bottom-6 left-6 w-16 h-16 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:shadow-green-600/25 transition-all duration-500 z-50 ${!showChat ? 'animate-pulse-glow' : ''}`}
+          style={{ transform: showChat ? 'rotate(0deg)' : 'rotate(0deg)' }}
+        >
+          <div className={`transition-all duration-300 ${showChat ? 'rotate-90 scale-90' : 'rotate-0 scale-100'}`}>
+            {showChat ? (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            ) : (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+            )}
           </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2 bg-gray-50">
-          {chatMessages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
-              <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-[#16a34a] text-white rounded-bl-sm"
-                  : "bg-white text-gray-700 border border-gray-100 rounded-br-sm"
-              }`}>
-                {msg.text}
+        </button>
+
+        {showChat && (
+          <div className="fixed bottom-24 left-6 w-80 h-[420px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 flex flex-col overflow-hidden z-50 animate-chat-slide-up">
+            <div className="bg-gradient-to-l from-[#16a34a] to-[#15803d] px-4 py-3.5 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="10" rx="2" /><circle cx="12" cy="5" r="2" /><path d="M12 7v4" /><line x1="8" y1="16" x2="8" y2="16" /><line x1="16" y1="16" x2="16" y2="16" /></svg></div>
+              <div>
+                <div className="text-white font-semibold text-sm">مساعد وارِف</div>
+                <div className="text-white/60 text-[11px]">يساعد في الاستفسارات والخدمات الزراعية</div>
               </div>
             </div>
-          ))}
-        </div>
-        <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100 bg-white">
-          {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
-            <button key={q} onClick={() => sendToAI(q)}
-              className="text-[10px] px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] transition-all">
-              {q}
-            </button>
-          ))}
-        </div>
-        <div className="px-3 py-2 flex gap-2 border-t border-gray-100 bg-white">
-          <input value={chatInput} onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); }}}
-            placeholder="اسألني عن محميتك..."
-            className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#16a34a] bg-gray-50"
-          />
-          <button onClick={() => { if (chatInput.trim()) { sendToAI(chatInput); setChatInput(""); }}}
-            className="w-8 h-8 bg-[#16a34a] rounded-lg flex items-center justify-center hover:bg-[#15803d]">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
-        </div>
+            <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2.5 bg-gray-50/50">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex animate-message-pop ${msg.role === "user" ? "justify-start" : "justify-end"}`}>
+                  <div className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${msg.role === "user"
+                      ? "bg-gradient-to-l from-[#16a34a] to-[#22c55e] text-white rounded-bl-md shadow-sm"
+                      : "bg-white text-gray-700 border border-gray-100 rounded-br-md shadow-sm"
+                    }`}>
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80">
+              {["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"].map(q => (
+                <button key={q} onClick={() => sendToAI(q)}
+                  className="text-[10px] px-2.5 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] hover:border-[#bbf7d0] transition-all duration-300">
+                  {q}
+                </button>
+              ))}
+            </div>
+            <div className="px-3 py-2.5 flex gap-2 border-t border-gray-100/60 bg-white">
+              <input value={chatInput} onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
+                placeholder="اسألني عن محميتك..."
+                className="input-enhanced flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2.5 outline-none bg-gray-50/50"
+              />
+              <button onClick={() => { if (chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
+                className="w-9 h-9 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-xl flex items-center justify-center hover:shadow-md hover:shadow-green-600/20 transition-all duration-300 active:scale-95">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-    )}
     </div>
-  </div>
-  
+
   );
 }
 
 /* =========================================================
-   Dashboard Layout (matches screenshot)
+   Sidebar (Persistent — always visible)
 ========================================================= */
-function DashboardHome({ onGo , onSendAI }) {
+function Sidebar({ currentPage, onGo }) {
+  const quickMenu = [
+    { label: "التوصيات", icon: "recs", page: "recs", badge: "2" },
+    { label: "الري", icon: "irrigation", page: "irrigation" },
+    { label: "الحساسات", icon: "sensors", page: "dashboard" },
+  ];
+
   return (
-    <div className="w-full h-full flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-l border-gray-100 flex flex-col flex-shrink-0 h-full">
-      
+    <div className="w-64 bg-white/80 backdrop-blur-sm border-l border-gray-100/60 flex flex-col flex-shrink-0 h-full">
       {/* Logo */}
       <div className="py-0 flex flex-col items-center justify-center gap-2">
-       <img src="/logo.png" alt="وارِف" className="w-40 h-40 object-contain" />
+        <img src="/logo.png" alt="وارِف" className="w-36 h-36 object-contain cursor-pointer" onClick={() => onGo("dashboard")} />
       </div>
 
-
-        {/* المحميات */}
-        <div className="p-3 border-b border-gray-50">
-          <div className="text-s text-gray-400 font-semibold mb-2 px-1">المحميات</div>
-
-          {["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"].map((farm, i) => (
-            <div key={farm} className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer text-sm mb-0.5 transition-all ${
-              i === 0 ? "bg-[#f0fdf4] text-[#16a34a] font-medium" : "text-gray-500 hover:bg-gray-50"
+      {/* المحميات */}
+      <div className="p-3 border-b border-gray-50">
+        <div className="text-sm text-gray-400 font-semibold mb-2 px-1">المحميات</div>
+        {["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"].map((farm, i) => (
+          <div key={farm} onClick={() => onGo("dashboard")} className={`sidebar-item flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-[15px] mb-0.5 transition-all duration-300 ${i === 0 ? "active bg-[#f0fdf4] text-[#16a34a] font-medium shadow-sm" : "text-gray-500 hover:bg-gray-50"
             }`}>
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${i === 0 ? "bg-[#16a34a]" : "bg-gray-300"}`} />
-              {farm}
-            </div>
-          ))}
-        </div>
-
-        {/* القائمة */}
-        <div className="p-3 flex-1">
-          <div className="text-s text-gray-400 font-semibold mb-2 px-1">القائمة</div>
-          {[
-            { label: "لوحة التحكم", icon: "🏠", active: true },
-            { label: "التوصيات", icon: "📋", badge: "2" },
-            { label: "الري", icon: "💧" },
-          ].map((item) => (
-            <div key={item.label} className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer text-sm mb-0.5 transition-all ${
-              item.active ? "bg-[#f0fdf4] text-[#16a34a] font-medium" : "text-gray-500 hover:bg-gray-50"
-            }`}>
-              <span>{item.icon}</span>
-              <span className="flex-1">{item.label}</span>
-              {item.badge && (
-                <span className="bg-[#fff7ed] text-[#ea580c] text-[9px] px-1.5 py-0.5 rounded-full font-medium">{item.badge}</span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* الطقس */}
-        <div className="p-3 border-t border-gray-50">
-          <div className="bg-gray-50 rounded-xl p-3">
-            <div className="text-xs text-gray-400 mb-1">☀️ مكة المكرمة</div>
-            <div className="text-base font-semibold text-gray-800">33°C</div>
-            <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-500 ${i === 0 ? "bg-[#16a34a] shadow-sm shadow-green-400/50" : "bg-gray-300"}`} />
+            {farm}
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 h-full overflow-auto p-5 flex flex-col gap-4 min-h-0">
-        <div className="grid grid-cols-3 gap-4">
-          <TemperatureCard onGo={onGo} />
-          <AirHumidityCard onGo={onGo} />
-          <SoilMoistureCard onGo={onGo} />
+      {/* القائمة السريعة */}
+      <div className="p-3 flex-1">
+        <div className="text-sm text-gray-400 font-semibold mb-2 px-1">القائمة السريعة</div>
+        {quickMenu.map((item) => (
+          <div key={item.label} onClick={() => onGo(item.page)}
+            className={`sidebar-item flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-[15px] mb-0.5 transition-all duration-300 ${currentPage === item.page ? "active bg-[#f0fdf4] text-[#16a34a] font-medium shadow-sm" : "text-gray-500 hover:bg-gray-50"
+              }`}>
+            <span className="w-5 h-5 flex items-center justify-center">{item.icon === "recs" ? <svg width="17" height="17" viewBox="0 0 24 24" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg> : item.icon === "irrigation" ? <svg width="17" height="17" viewBox="0 0 24 24" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg> : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#8b5cf6" /></svg>}</span>
+            <span className="flex-1">{item.label}</span>
+            {item.badge && (
+              <span className="bg-[#fff7ed] text-[#ea580c] text-[11px] px-2 py-0.5 rounded-full font-medium">{item.badge}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* الطقس */}
+      <div className="p-3 border-t border-gray-50">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-3.5 border border-gray-100/50">
+          <div className="text-xs text-gray-400 mb-1 flex items-center gap-1"><svg width="15" height="15" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg> مكة المكرمة</div>
+          <div className="text-lg font-bold text-gray-800">33°C</div>
+          <div className="text-xs text-gray-400 mt-0.5">مشمس — رطوبة 45%</div>
         </div>
-        <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-          <RecommendationsCard onGo={onGo} />
-          <IrrigationCard onGo={onGo} />
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   Dashboard Content (Cards Grid only — sidebar is separate)
+========================================================= */
+function DashboardHome({ onGo, onSendAI }) {
+  return (
+    <div className="w-full h-full overflow-auto p-6 min-h-0">
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-5">
+        <div className="grid grid-cols-3 gap-5">
+          <div className="animate-fade-in-up delay-1"><TemperatureCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-2"><AirHumidityCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-3"><SoilMoistureCard onGo={onGo} /></div>
+        </div>
+        <div className="grid grid-cols-2 gap-5">
+          <div className="animate-fade-in-up delay-4"><RecommendationsCard onGo={onGo} /></div>
+          <div className="animate-fade-in-up delay-5"><IrrigationCard onGo={onGo} /></div>
         </div>
       </div>
     </div>
@@ -340,7 +348,8 @@ function DashboardHome({ onGo , onSendAI }) {
 function CardShell({ children, className = "" }) {
   return (
     <section
-      className={`bg-white rounded-2xl border border-gray-100 hover:border-gray-200 transition-all ${className}`}
+      className={`bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100/80 card-hover ${className}`}
+      style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}
     >
       {children}
     </section>
@@ -358,9 +367,9 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel = "التفاصي
       <button
         type="button"
         onClick={onDetails}
-        className="text-xs text-[#16a34a] bg-[#f0fdf4] px-2.5 py-1 rounded-lg hover:bg-[#dcfce7] transition-all shrink-0 font-medium"
+        className="text-xs text-[#16a34a] bg-[#f0fdf4] px-3 py-1.5 rounded-xl hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 shrink-0 font-semibold group"
       >
-        {detailsLabel} ←
+        {detailsLabel} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
       </button>
     </div>
   );
@@ -668,7 +677,7 @@ function PlaceholderPage({ page, onBack }) {
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="text-lg font-semibold text-gray-800">{title}</div>
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-[13px] text-gray-500 mt-1">
               Placeholder — سيتم تصميم الصفحة وربطها لاحقًا.
             </div>
           </div>
@@ -875,20 +884,19 @@ function RecommendationsPage({ onBack }) {
   };
 
   const filterBtn = (key) =>
-    `px-3 py-2 rounded-xl text-xs border transition ${
-      filter === key
-        ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
-        : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+    `px-3 py-2 rounded-xl text-xs border transition ${filter === key
+      ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
+      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
     }`;
 
   return (
-    <div className="w-full h-full p-6 overflow-auto" dir="rtl">
+    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="text-lg font-semibold text-gray-800">التوصيات</div>
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-[13px] text-gray-500 mt-1">
               جميع التوصيات المقترحة
             </div>
           </div>
@@ -948,11 +956,10 @@ function RecommendationsPage({ onBack }) {
             filteredItems.map((it, idx) => (
               <div
                 key={it.id}
-                className={`p-4 flex items-center justify-between gap-3 ${
-                  idx !== filteredItems.length - 1
+                className={`p-4 flex items-center justify-between gap-3 ${idx !== filteredItems.length - 1
                     ? "border-b border-gray-100"
                     : ""
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 rounded-2xl bg-[#F1F5F1] border border-gray-200 flex items-center justify-center shrink-0">
@@ -961,7 +968,7 @@ function RecommendationsPage({ onBack }) {
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="text-sm font-semibold text-gray-800">
+                      <div className="text-[16px] font-semibold text-gray-800">
                         {it.title}
                       </div>
                       <span
@@ -999,7 +1006,7 @@ function RecommendationsPage({ onBack }) {
           <button
             type="button"
             className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]"
-            onClick={() => {}}
+            onClick={() => { }}
           >
             تصدير / مشاركة
           </button>
@@ -1053,14 +1060,14 @@ function IrrigationPage({ onBack }) {
   const current = series[series.length - 1]?.value ?? 0;
 
   return (
-    <div className="w-full h-full p-6 overflow-auto" dir="rtl">
+    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="text-lg font-semibold text-gray-800">
               تفاصيل حالة الري
             </div>
-            <div className="text-[11px] text-gray-500 mt-1">
+            <div className="text-[13px] text-gray-500 mt-1">
               متابعة الاستخدام اليومي + إجراءات سريعة
             </div>
           </div>
@@ -1078,10 +1085,10 @@ function IrrigationPage({ onBack }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <IrrigationCardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 معدل الري اليوم
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 آخر تحديث: قبل 10 دقائق
               </div>
             </div>
@@ -1095,8 +1102,8 @@ function IrrigationPage({ onBack }) {
 
           <IrrigationCardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">التحكم </div>
-              <div className="text-[11px] text-gray-500 mt-1"></div>
+              <div className="text-[16px] font-semibold text-gray-800">التحكم </div>
+              <div className="text-[13px] text-gray-500 mt-1"></div>
             </div>
 
             <div className="mt-4 flex flex-col gap-3">
@@ -1120,10 +1127,10 @@ function IrrigationPage({ onBack }) {
 
           <IrrigationCardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 التوصيات
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 مقترحات حسب القراءة
               </div>
             </div>
@@ -1142,10 +1149,10 @@ function IrrigationPage({ onBack }) {
         <IrrigationCardShell className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 الرسم البياني الشهري
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 يوضح الرسم نسبة استخدام الري خلال أيام الشهر.
               </div>
             </div>
@@ -1156,11 +1163,10 @@ function IrrigationPage({ onBack }) {
                   key={m}
                   type="button"
                   onClick={() => setMonth(idx)}
-                  className={`px-3 py-2 rounded-xl text-xs border transition ${
-                    idx === month
+                  className={`px-3 py-2 rounded-xl text-xs border transition ${idx === month
                       ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
                       : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   {m}
                 </button>
@@ -1184,7 +1190,7 @@ function IrrigationPage({ onBack }) {
 function IrrigationCardShell({ children, className = "" }) {
   return (
     <section
-      className={`bg-white rounded-2xl shadow border border-gray-200 ${className}`}
+      className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-100/80 card-hover ${className}`}
     >
       {children}
     </section>
@@ -1196,11 +1202,10 @@ function IrrigationActionButton({ label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full px-4 py-3 rounded-2xl border text-sm text-right transition ${
-        active
-          ? "bg-[#2E7D32] text-white border-[#2E7D32]"
-          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-      }`}
+      className={`w-full px-4 py-3 rounded-2xl border text-sm text-right transition-all duration-300 ${active
+          ? "bg-gradient-to-l from-[#2E7D32] to-[#388E3C] text-white border-[#2E7D32] shadow-md shadow-green-900/15"
+          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:shadow-sm"
+        }`}
     >
       {label}
     </button>
@@ -1547,18 +1552,18 @@ function SensorTopBar({ title, subtitle, icon, onBack }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-[#E8F5E9] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center">
           {icon}
         </div>
         <div className="text-right">
-          <div className="text-lg font-semibold text-gray-800">{title}</div>
-          <div className="text-[11px] text-gray-500">{subtitle}</div>
+          <div className="text-xl font-bold text-gray-800">{title}</div>
+          <div className="text-sm text-gray-500">{subtitle}</div>
         </div>
       </div>
       <button
         type="button"
         onClick={onBack}
-        className="px-3 py-2 rounded-xl border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+        className="px-4 py-2.5 rounded-xl border border-gray-300 text-[15px] text-gray-700 hover:bg-gray-50 hover:shadow-sm transition-all duration-300 flex items-center gap-2 font-medium"
       >
         <ArrowLeftIcon />
         رجوع
@@ -1572,11 +1577,10 @@ function SensorPill({ label, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-2 rounded-xl text-xs border transition ${
-        active
+      className={`px-3 py-2 rounded-xl text-xs border transition ${active
           ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
           : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -1588,11 +1592,10 @@ function SensorPrimaryButton({ children, onClick, active = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${
-        active
+      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${active
           ? "bg-[#2E7D32] text-white border-[#2E7D32]"
           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-      }`}
+        }`}
     >
       {children}
     </button>
@@ -1604,11 +1607,10 @@ function SensorSecondaryButton({ children, onClick, active = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${
-        active
+      className={`w-full px-4 py-2 rounded-xl border text-sm text-right transition ${active
           ? "bg-[#2E7D32] text-white border-[#2E7D32]"
           : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-      }`}
+        }`}
     >
       {children}
     </button>
@@ -1783,7 +1785,7 @@ function TemperaturePage({ onBack }) {
   );
 
   return (
-    <div className="w-full h-full p-6 overflow-auto" dir="rtl">
+    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
         <SensorTopBar
           title="درجة الحرارة"
@@ -1795,10 +1797,10 @@ function TemperaturePage({ onBack }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 القراءة الحالية
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 آخر تحديث: قبل 5 دقائق
               </div>
             </div>
@@ -1819,8 +1821,8 @@ function TemperaturePage({ onBack }) {
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">التحكم</div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[16px] font-semibold text-gray-800">التحكم</div>
+              <div className="text-[13px] text-gray-500 mt-1">
                 تحكم بالتبريد والتهوية
               </div>
             </div>
@@ -1844,10 +1846,10 @@ function TemperaturePage({ onBack }) {
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 التوصيات
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 مقترحات بناءً على القراءة
               </div>
             </div>
@@ -1862,10 +1864,10 @@ function TemperaturePage({ onBack }) {
         <CardShell className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 الرسم البياني الشهري
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 X: الأيام — Y: درجة الحرارة
               </div>
             </div>
@@ -1914,7 +1916,7 @@ function AirHumidityPage({ onBack }) {
   );
 
   return (
-    <div className="w-full h-full p-6 overflow-auto" dir="rtl">
+    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
         <SensorTopBar
           title="رطوبة الهواء"
@@ -1926,10 +1928,10 @@ function AirHumidityPage({ onBack }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 القراءة الحالية
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 آخر تحديث: قبل 5 دقائق
               </div>
             </div>
@@ -1948,8 +1950,8 @@ function AirHumidityPage({ onBack }) {
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">التحكم</div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[16px] font-semibold text-gray-800">التحكم</div>
+              <div className="text-[13px] text-gray-500 mt-1">
                 تحكم بالتبريد والتهوية
               </div>
             </div>
@@ -1973,10 +1975,10 @@ function AirHumidityPage({ onBack }) {
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 التوصيات
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 مقترحات بحسب القراءة
               </div>
             </div>
@@ -1993,10 +1995,10 @@ function AirHumidityPage({ onBack }) {
         <CardShell className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 الرسم البياني الشهري
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 يوضح الرسم مستوى الرطوبة خلال أيام الشهر.
               </div>
             </div>
@@ -2062,7 +2064,7 @@ function SoilMoisturePage({ onBack }) {
   );
 
   return (
-    <div className="w-full h-full p-6 overflow-auto" dir="rtl">
+    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
         <SensorTopBar
           title=" التربة"
@@ -2074,10 +2076,10 @@ function SoilMoisturePage({ onBack }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 القراءة الحالية
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 ملخص سريع للتربة
               </div>
             </div>
@@ -2100,8 +2102,8 @@ function SoilMoisturePage({ onBack }) {
           {/* Control card like irrigation page */}
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">التحكم</div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[16px] font-semibold text-gray-800">التحكم</div>
+              <div className="text-[13px] text-gray-500 mt-1">
                 إجراءات مرتبطة بالتربة والري
               </div>
             </div>
@@ -2126,10 +2128,10 @@ function SoilMoisturePage({ onBack }) {
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 التوصيات
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 اقتراحات بحسب المؤشرات الحالية
               </div>
             </div>
@@ -2146,10 +2148,10 @@ function SoilMoisturePage({ onBack }) {
         <CardShell className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="text-right">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 تحليل شهري
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">
+              <div className="text-[13px] text-gray-500 mt-1">
                 اختر الشهر لعرض الرسوم
               </div>
             </div>
@@ -2168,10 +2170,10 @@ function SoilMoisturePage({ onBack }) {
           <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <CardShell className="p-4">
               <div className="text-right">
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-[16px] font-semibold text-gray-800">
                   حرارة التربة
                 </div>
-                <div className="text-[11px] text-gray-500 mt-1">
+                <div className="text-[13px] text-gray-500 mt-1">
                   يوضح الرسم حرارة التربة خلال أيام الشهر.
                 </div>
               </div>
@@ -2186,10 +2188,10 @@ function SoilMoisturePage({ onBack }) {
 
             <CardShell className="p-4">
               <div className="text-right">
-                <div className="text-sm font-semibold text-gray-800">
+                <div className="text-[16px] font-semibold text-gray-800">
                   رطوبة التربة
                 </div>
-                <div className="text-[11px] text-gray-500 mt-1">
+                <div className="text-[13px] text-gray-500 mt-1">
                   يوضح الرسم رطوبة التربة خلال أيام الشهر.
                 </div>
               </div>
@@ -2239,11 +2241,11 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
   };
   const savedSensors = JSON.parse(localStorage.getItem('warif_user') || '{}').sensors || [];
   const initialSensors = savedSensors.length > 0
-    ? savedSensors.map((key, i) => ({ id: `S${i+1}`, ...sensorMap[key] }))
+    ? savedSensors.map((key, i) => ({ id: `S${i + 1}`, ...sensorMap[key] }))
     : [
-        { id: "S1", name: "حساس التربة", type: "رطوبة التربة" },
-        { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة" },
-        { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء" },
+      { id: "S1", name: "حساس التربة", type: "رطوبة التربة" },
+      { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة" },
+      { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء" },
     ];
   const [sensors, setSensors] = useState(initialSensors);
 
@@ -2398,7 +2400,7 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
             onClick={onBack}
             className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#2E7D32] transition-all"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 18l6-6-6-6" /></svg>
             رجوع للداشبورد
           </button>
         </div>
@@ -2407,22 +2409,20 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
           <button
             type="button"
             onClick={() => setPage("profile")}
-            className={`px-4 py-2 rounded-lg text-sm transition ${
-              page === "profile"
+            className={`px-4 py-2 rounded-lg text-sm transition ${page === "profile"
                 ? "bg-white shadow text-[#1B5E20] font-semibold"
                 : "text-gray-600 hover:text-gray-800"
-            }`}
+              }`}
           >
             {t.profile}
           </button>
           <button
             type="button"
             onClick={() => setPage("settings")}
-            className={`px-4 py-2 rounded-lg text-sm transition ${
-              page === "settings"
+            className={`px-4 py-2 rounded-lg text-sm transition ${page === "settings"
                 ? "bg-white shadow text-[#1B5E20] font-semibold"
                 : "text-gray-600 hover:text-gray-800"
-            }`}
+              }`}
           >
             {t.settings}
           </button>
@@ -2433,22 +2433,20 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
           <button
             type="button"
             onClick={() => setLanguage("ar")}
-            className={`px-3 py-1 rounded-lg text-xs border transition ${
-              language === "ar"
+            className={`px-3 py-1 rounded-lg text-xs border transition ${language === "ar"
                 ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             {t.arabic}
           </button>
           <button
             type="button"
             onClick={() => setLanguage("en")}
-            className={`px-3 py-1 rounded-lg text-xs border transition ${
-              language === "en"
+            className={`px-3 py-1 rounded-lg text-xs border transition ${language === "en"
                 ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20]"
                 : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-            }`}
+              }`}
           >
             {t.english}
           </button>
@@ -2474,15 +2472,15 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
 
       {editingField && (
         <Account_ModalShell onClose={closeEdit}>
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[420px] max-w-[92vw] p-5 text-right">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[420px] max-w-[92vw] p-5 text-right animate-modal-in">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 {t.edit}:{" "}
                 {editingField === "username"
                   ? t.username
                   : editingField === "email"
-                  ? t.email
-                  : t.password}
+                    ? t.email
+                    : t.password}
               </div>
               <button
                 type="button"
@@ -2497,8 +2495,8 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
               {editingField === "username"
                 ? t.username
                 : editingField === "email"
-                ? t.email
-                : t.password}
+                  ? t.email
+                  : t.password}
             </label>
             <input
               value={draftValue}
@@ -2530,9 +2528,9 @@ function AccountAndSettingsPages({ initialPage = "profile", onBack, onLogout }) 
 
       {sensorModal.open && (
         <Account_ModalShell onClose={closeSensorModal}>
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[460px] max-w-[92vw] p-5 text-right">
+          <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[460px] max-w-[92vw] p-5 text-right animate-modal-in">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm font-semibold text-gray-800">
+              <div className="text-[16px] font-semibold text-gray-800">
                 {sensorModal.mode === "add"
                   ? t.addSensor
                   : `${t.edit}: ${t.sensors}`}
@@ -2722,12 +2720,12 @@ function Account_SettingsPage({ t, sensors, onAddSensor, onEditSensor, onDeleteS
               title={t.logout}
               subtitle="إنهاء الجلسة الحالية بأمان."
               right={
-               <button
-                 onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
-                 className="px-3 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:opacity-95"
-              >
-                 {t.logout}
-              </button>
+                <button
+                  onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
+                  className="px-3 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:opacity-95"
+                >
+                  {t.logout}
+                </button>
               }
             />
           </div>
@@ -2752,7 +2750,7 @@ function Account_CardHeader({ title, subtitle }) {
         {title}
       </div>
       {subtitle ? (
-        <div className="text-[11px] text-gray-500 mt-1">{subtitle}</div>
+        <div className="text-[13px] text-gray-500 mt-1">{subtitle}</div>
       ) : null}
     </div>
   );
@@ -2797,11 +2795,10 @@ function Account_IconButton({ children, title, onClick, danger }) {
       type="button"
       title={title}
       onClick={onClick}
-      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition ${
-        danger
+      className={`w-9 h-9 rounded-xl border flex items-center justify-center transition ${danger
           ? "border-[#f1c2c2] hover:bg-[#fdecec]"
           : "border-gray-200 hover:bg-gray-50"
-      }`}
+        }`}
     >
       {children}
     </button>
