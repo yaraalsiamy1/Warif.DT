@@ -3,12 +3,12 @@ import { SensorTopBar, CardShell } from './dashboardShared';
 import { IrrigationActionButton, IrrigationDonut, IrrigationBarChart2D } from './dashboardCharts';
 import { irrigationDaysInMonth, generateIrrigationUsageSeries } from './dashboardUtils';
 
-export function IrrigationPage({ onBack, mode }) {
+export function IrrigationPage({ onBack, globalAutoMode }) {
   const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
   const currentMonthIdx = new Date().getMonth();
 
   const [month, setMonth] = useState(currentMonthIdx);
-  const [activeAction, setActiveAction] = useState("start");
+  const [activeAction, setActiveAction] = useState("");
 
   // Manual schedule state
   const [morningEnabled, setMorningEnabled] = useState(true);
@@ -58,8 +58,8 @@ export function IrrigationPage({ onBack, mode }) {
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
 
         <SensorTopBar
-          title="تفاصيل حالة الري"
-          subtitle="متابعة الاستخدام اليومي + إجراءات سريعة"
+          title="إدارة الري والموارد (Irrigation Module)"
+          subtitle="تحكم ذكي موجه بالذكاء الاصطناعي لحساب التكلفة وتوفير المياه"
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>}
           onBack={onBack}
           onExport={() => {}}
@@ -81,21 +81,25 @@ export function IrrigationPage({ onBack, mode }) {
           </CardShell>
 
           <CardShell className="p-5">
-            <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">التحكم السريع</div>
-              <div className="text-[13px] text-gray-500 mt-1">إجراءات فورية</div>
-            </div>
-            <div className="mt-4 flex flex-col gap-3">
-              <IrrigationActionButton label="تشغيل الري الآن" active={activeAction === "start"} onClick={() => setActiveAction("start")} />
-              <IrrigationActionButton label="جدولة الري"      active={activeAction === "schedule"} onClick={() => setActiveAction("schedule")} />
-              <IrrigationActionButton label="إيقاف الري"      active={activeAction === "stop"} onClick={() => setActiveAction("stop")} />
-            </div>
+            <div className="text-[16px] font-semibold text-gray-800">إدارة تدفق المياه</div>
+            <div className="text-[13px] text-gray-500 mt-1 mb-4">يعتمد على حالة الأتمتة المركزية</div>
+
+            {globalAutoMode ? (
+              <div className="bg-green-50/50 border border-green-100 rounded-xl p-4 text-center text-[13px] text-green-700 font-medium h-full flex flex-col items-center justify-center shadow-sm">
+                النظام يتحكم بالري تلقائياً بناءً على توقعات الطقس ورطوبة التربة الحالية. يتم إلغاء الجدولة اليدوية مؤقتاً لتوفير المياه والموارد والأسمدة.
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-col gap-3">
+                <IrrigationActionButton label="التضحية بالجدول والري الفوري" active={activeAction === "start"} onClick={() => setActiveAction("start")} />
+                <IrrigationActionButton label="إيقاف المضخات فوراً" active={activeAction === "stop"} onClick={() => setActiveAction("stop")} />
+              </div>
+            )}
           </CardShell>
 
           <CardShell className="p-5">
             <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">التوصيات</div>
-              <div className="text-[13px] text-gray-500 mt-1">مقترحات حسب القراءة</div>
+              <div className="text-[16px] font-semibold text-gray-800">قرارات الذكاء الاصطناعي (AI Decisions)</div>
+              <div className="text-[13px] text-gray-500 mt-1">تبريرات اتخاذ القرار الحالي للري</div>
             </div>
             <ul className="mt-4 list-disc list-inside text-sm text-gray-700 leading-7 text-right">
               <li>معدل الري ضمن النطاق المتوسط، يُنصح بالاستمرار على الإعدادات الحالية.</li>
@@ -104,68 +108,94 @@ export function IrrigationPage({ onBack, mode }) {
           </CardShell>
         </div>
 
-        {/* Monthly Chart */}
-        <CardShell className="p-5">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="text-right">
-              <div className="text-[16px] font-semibold text-gray-800">الرسم البياني الشهري</div>
-              <div className="text-[13px] text-gray-500 mt-1">
-                {isFutureMonth
-                  ? "لا تتوفر بيانات للأشهر المستقبلية"
-                  : "يوضح الرسم نسبة استخدام الري خلال أيام الشهر"}
+        {/* Detailed Resource Economics Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <CardShell className="p-5 relative overflow-hidden bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[16px] font-bold text-gray-800">استهلاك المياه (لتر) - شهرياً</div>
+                <div className="text-[12px] text-gray-500 mt-0.5">مقارنة التوأم الرقمي بالري التقليدي</div>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap justify-start">
-              {MONTHS.map((m, idx) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => idx <= currentMonthIdx && setMonth(idx)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition ${
-                    idx === month
-                      ? "bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold"
-                      : idx > currentMonthIdx
-                      ? "bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed"
-                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+            <div className="flex items-end gap-6 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-700">النظام الذكي (الحالي)</span>
+                  <span className="font-bold text-blue-600">4,500 L</span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full w-[45%]" />
+                </div>
+              </div>
             </div>
-          </div>
+            <div className="flex items-end gap-6">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-500">الزراعة التقليدية (المتوقع)</span>
+                  <span className="font-bold text-gray-500">10,000 L</span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gray-400 rounded-full w-[100%]" />
+                </div>
+              </div>
+            </div>
+          </CardShell>
 
-          {isFutureMonth ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-              </svg>
-              <div className="mt-3 text-[15px] font-medium">بيانات {MONTHS[month]} غير متوفرة بعد</div>
-              <div className="text-[13px] mt-1">سيتم عرضها عند بداية الشهر</div>
+          <CardShell className="p-5 relative overflow-hidden bg-white">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[16px] font-bold text-gray-800">استهلاك الكهرباء بمضخات الري (kWh)</div>
+                <div className="text-[12px] text-gray-500 mt-0.5">تتبع سحب الطاقة والوفر المحقق</div>
+              </div>
+              <div className="w-10 h-10 bg-yellow-50 text-yellow-500 rounded-xl flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
             </div>
-          ) : (
-            <div className="mt-4">
-              <IrrigationBarChart2D data={series} yLabel="نسبة الاستخدام" unit="%" />
+            <div className="flex items-end gap-6 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-700">النظام الذكي (الحالي)</span>
+                  <span className="font-bold text-yellow-600">320 kWh</span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-500 rounded-full w-[60%]" />
+                </div>
+              </div>
             </div>
-          )}
-        </CardShell>
+            <div className="flex items-end gap-6">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-semibold text-gray-500">منحنى الأساس (Baseline)</span>
+                  <span className="font-bold text-gray-500">550 kWh</span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-gray-400 rounded-full w-[100%]" />
+                </div>
+              </div>
+            </div>
+          </CardShell>
+        </div>
 
         {/* Auto mode: AI boundary settings */}
-        {mode === "auto" && <CardShell className="p-5" key="ai-settings">
+        {globalAutoMode === true && <CardShell className="p-5" key="ai-settings">
           <div className="text-right mb-5">
             <div className="text-[16px] font-semibold text-gray-800">حدود الري الذكي</div>
             <div className="text-[13px] text-gray-500 mt-0.5">القيود التي يلتزم بها النظام عند اتخاذ قرارات الري تلقائياً بناءً على قراءات الحساسات</div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Target moisture range */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
             <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
-              <div className="text-sm font-semibold text-gray-800 mb-3">نطاق رطوبة التربة المستهدف</div>
-              <div className="flex flex-col gap-2">
+              <div className="text-sm font-semibold text-gray-800 mb-1">النطاق المثالي لرطوبة التربة</div>
+              <div className="text-[12px] text-gray-400 mb-3">لن يقوم النظام بالري إذا كانت الرطوبة ضمن هذا النطاق</div>
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-[13px] text-gray-500">
-                  <span className="w-8">من</span>
+                  <span className="w-8">مِن</span>
                   <div className="flex gap-1.5 flex-wrap">
-                    {[25, 30, 35, 40].map(v => (
+                    {[20, 25, 30, 35].map(v => (
                       <button key={v} type="button" onClick={() => setMoistureMin(v)}
                         className={`px-2.5 py-1 rounded-lg border text-xs transition ${moistureMin === v ? 'bg-[#E8F5E9] border-[#2E7D32] text-[#1B5E20] font-semibold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                         {v}%
@@ -187,7 +217,6 @@ export function IrrigationPage({ onBack, mode }) {
               </div>
             </div>
 
-            {/* Max daily water */}
             <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
               <div className="text-sm font-semibold text-gray-800 mb-3">الحد الأقصى للمياه اليومية</div>
               <div className="flex gap-2 flex-wrap">
@@ -200,7 +229,6 @@ export function IrrigationPage({ onBack, mode }) {
               </div>
             </div>
 
-            {/* Restricted hours */}
             <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -224,7 +252,6 @@ export function IrrigationPage({ onBack, mode }) {
               )}
             </div>
 
-            {/* AI sensitivity */}
             <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
               <div className="text-sm font-semibold text-gray-800 mb-1">حساسية النظام الذكي</div>
               <div className="text-[12px] text-gray-400 mb-3">مدى سرعة استجابة النظام لتغيرات الحساسات</div>
@@ -248,7 +275,7 @@ export function IrrigationPage({ onBack, mode }) {
         </CardShell>}
 
         {/* Manual mode: fixed schedule */}
-        {mode === "manual" && <CardShell className="p-5" key="manual-settings">
+        {globalAutoMode === false && <CardShell className="p-5" key="manual-settings">
           <div className="text-right mb-5">
             <div className="text-[16px] font-semibold text-gray-800">جدول الري اليدوي</div>
             <div className="text-[13px] text-gray-500 mt-0.5">حدد أوقات الري ومدته في الوضع اليدوي</div>
@@ -267,7 +294,7 @@ export function IrrigationPage({ onBack, mode }) {
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-gray-500">الوقت:</span>
                   <input type="time" value={morningTime} onChange={e => setMorningTime(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
                 </div>
               )}
             </div>
@@ -284,7 +311,7 @@ export function IrrigationPage({ onBack, mode }) {
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-gray-500">الوقت:</span>
                   <input type="time" value={eveningTime} onChange={e => setEveningTime(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
+                    className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-[#2E7D32]" />
                 </div>
               )}
             </div>
@@ -322,9 +349,27 @@ export function IrrigationPage({ onBack, mode }) {
           </div>
         </CardShell>}
 
+        {/* Charts */}
+        <CardShell className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-right">
+              <div className="text-[16px] font-semibold text-gray-800">معدل الاستهلاك الشهري</div>
+              <div className="text-[13px] text-gray-500 mt-1">المعدل اليومي لاستهلاك المياه بالنسبة المئوية</div>
+            </div>
+          </div>
+          <div className="mt-4">
+            {isFutureMonth ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <div className="mt-3 text-[15px] font-medium">بيانات {MONTHS[month]} غير متوفرة بعد</div>
+              </div>
+            ) : (
+              <IrrigationBarChart2D data={series} yLabel="الاستهلاك" unit="%" />
+            )}
+          </div>
+        </CardShell>
+
       </div>
     </div>
   );
 }
-
-

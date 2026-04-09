@@ -1,7 +1,7 @@
 export { Sidebar } from './Sidebar';
 export { DashboardHome } from './DashboardHome';
 export { PlaceholderPage } from './PlaceholderPage';
-export { RecommendationsPage } from './RecommendationsPage';
+export { DecisionSupportPage } from './DecisionSupportPage';
 export { IrrigationPage } from './IrrigationPage';
-export { TemperaturePage, AirHumidityPage, SoilMoisturePage } from './SensorPages';
+export { MicroclimatePage, SoilCropHealthPage } from './SensorPages';
 export { AccountAndSettingsPages } from './AccountAndSettings';

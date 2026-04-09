@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { translations } from "../i18n";
-import { Sidebar, DashboardHome, RecommendationsPage, IrrigationPage, TemperaturePage, AirHumidityPage, SoilMoisturePage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
+import { Sidebar, DashboardHome, DecisionSupportPage, IrrigationPage, MicroclimatePage, SoilCropHealthPage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
+import { WeatherIcon } from "./dashboard/dashboardShared";
 
 /* =========================================================
    WARIF | Dashboard (Scope: Sensors + Irrigation + Recs + Account/Settings)
@@ -51,19 +52,40 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
   }, [firstName]);
 
   const [mode, setMode] = useState("auto");
-  const [weatherData, setWeatherData] = useState({ temp: 31, humidity: 45, condition: "مشمس" });
+  const [weatherData, setWeatherData] = useState({ temp: 31, humidity: 45, condition: "مشمس", code: 0, isDay: true, locationName: "جاري تحديد الموقع..." });
 
   useEffect(() => {
     async function fetchWeather() {
       try {
-        // الإحداثيات الدقيقة للمزرعة
+        // الإحداثيات الدقيقة للمزرعة بناءً على خرائط جوجل
         const lat = "21.331608";
         const lon = "40.061178";
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,is_day&timezone=auto`);
         const data = await res.json();
+        
+        let fetchLocName = "مزرعة مكة";
+        try {
+           // جلب اسم الحي أو المنطقة بناءً على الإحداثيات
+           const locRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ar`);
+           if (locRes.ok) {
+              const locData = await locRes.json();
+              if (locData.address) {
+                 fetchLocName = locData.address.hamlet || locData.address.suburb || locData.address.neighbourhood || locData.address.city || fetchLocName;
+                 // Add the region to the name if needed
+                 if (locData.address.city && fetchLocName !== locData.address.city) {
+                    fetchLocName = `${fetchLocName} - ${locData.address.city}`;
+                 }
+              }
+           }
+        } catch (e) {
+           console.log("Geocoding failed", e);
+        }
+
         if (data.current) {
           const code = data.current.weather_code;
-          let cond = "مشمس";
+          const isDay = data.current.is_day === 1;
+
+          let cond = isDay ? "مشمس" : "صافي";
           if (code >= 1 && code <= 3) cond = "غائم جزئياً";
           else if (code >= 45 && code <= 48) cond = "ضباب";
           else if (code >= 51 && code <= 67) cond = "ممطر";
@@ -74,7 +96,10 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
           setWeatherData({
             temp: Math.round(data.current.temperature_2m),
             humidity: Math.round(data.current.relative_humidity_2m),
-            condition: cond
+            condition: cond,
+            code: code,
+            isDay: isDay,
+            locationName: fetchLocName
           });
         }
       } catch (error) {
@@ -88,6 +113,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
 
   // Navigation scaffold
   const [page, setPage] = useState("dashboard");
+  const [globalAutoMode, setGlobalAutoMode] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSensorsPopup, setShowSensorsPopup] = useState(false);
 
@@ -188,103 +214,100 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
       >
         <div className="w-full h-full flex flex-col">
           {/* ================= Header ================= */}
-          <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-5 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
-            {/* Right: Temp + Time */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-[15px] text-gray-500">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
-                <span>{T.farmTemp}</span>
-                <span className="font-bold text-[#ea580c]">{weatherData.temp}°C</span>
+          <header className="w-full h-16 bg-white/90 backdrop-blur-md flex items-center justify-between px-6 flex-shrink-0 z-10 animate-fade-in-down" style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', boxShadow: '0 1px 12px rgba(0,0,0,0.03)' }}>
+            
+            {/* Start (Right in RTL): Breadcrumb & Sensors */}
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                 <div className="text-[10px] font-bold text-gray-400 mb-0.5 tracking-wide">المحميات المادية / محمية الخضروات /</div>
+                 <div className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2">
+                   {page === "dashboard" ? "الرئيسية (Dashboard)" : page === "microclimate" ? "وحدة المناخ الدقيق" : page === "soil" ? "صحة التربة والمحصول" : page === "irrigation" ? "إدارة الري والموارد" : page === "dss" ? "نظام دعم اتخاذ القرار" : "إعدادات النظام"}
+                 </div>
               </div>
-              <div className="w-px h-4 bg-gray-100" />
-              <div className="text-[15px] text-gray-400">
-                {T.lastUpdate}: <span className="font-medium text-gray-600">{new Date().toLocaleTimeString(isRtl ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-            </div>
-
-            {/* Left: alerts + sensors + irrigation toggle + lang + user */}
-            <div className="flex items-center gap-3">
-
-              {/* Alert */}
-              <div className="badge-warning flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#fff7ed] text-[#ea580c] border border-[#fed7aa] transition-all duration-300 hover:shadow-md cursor-default">
-                <span className="w-2 h-2 rounded-full bg-[#ea580c] animate-pulse" />
-                {T.highTemp}
-              </div>
-
-              {/* Connected sensors — clickable */}
+              
+              <div className="h-8 w-px bg-gray-200 mx-2" />
+              
+              {/* Connected sensors */}
               <div className="relative" data-sensors-popup>
                 <button
                   onClick={() => setShowSensorsPopup(v => !v)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer shadow-sm"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse" />
                   {connectedSensors.length} {T.sensorsConnected}
                 </button>
               </div>
+            </div>
 
+            {/* Center: Master AI Switch */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gray-50/90 border border-gray-200 rounded-2xl p-1 shadow-sm">
+              <button
+                onClick={() => setGlobalAutoMode(true)}
+                className={`px-5 py-1.5 text-[13px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl ${globalAutoMode
+                  ? "bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white shadow-md shadow-green-500/20"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  }`}
+              >
+                {globalAutoMode && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />} الأتمتة الذكية
+              </button>
+              <button
+                onClick={() => setGlobalAutoMode(false)}
+                className={`px-5 py-1.5 text-[13px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl ${!globalAutoMode
+                  ? "bg-gray-800 text-white shadow-md shadow-gray-900/20"
+                  : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  }`}
+              >
+                تحكم يدوي
+              </button>
+            </div>
 
-              {/* Irrigation toggle */}
-              <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50" style={{ width: '120px' }}>
-                <button
-                  onClick={() => setMode("auto")}
-                  className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "auto"
-                    ? "bg-[#16a34a] text-white rounded-2xl mx-0.5 my-0.5"
-                    : "text-gray-400"
-                    }`}
-                >
-                  {T.auto}
-                </button>
-                <button
-                  onClick={() => setMode("manual")}
-                  className={`flex-1 py-1.5 text-center text-sm font-medium transition-all ${mode === "manual"
-                    ? "bg-[#ef4444] text-white rounded-2xl mx-0.5 my-0.5"
-                    : "text-gray-400"
-                    }`}
-                >
-                  {T.manual}
-                </button>
+            {/* End (Left in RTL): Weather + Lang + User */}
+            <div className="flex items-center gap-4">
+              
+              {/* Compact Weather Widget */}
+              <div className="hidden lg:flex items-center gap-2 rtl:flex-row-reverse border-l border-gray-200/80 pl-4 py-1">
+                 <span className="text-xl font-black text-gray-800" dir="ltr">{weatherData.temp}°C</span>
+                 <div className="text-right flex flex-col justify-center">
+                   <div className="text-[12px] font-bold text-gray-600 leading-tight">{weatherData.condition}</div>
+                   <div className="text-[10px] font-bold text-gray-400 leading-tight mt-0.5">رطوبة {weatherData.humidity}%</div>
+                 </div>
               </div>
 
               {/* Language toggle */}
               <button
                 onClick={() => handleLanguageChange(language === 'ar' ? 'en' : 'ar')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 text-sm text-gray-500 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300"
+                className="flex items-center justify-center w-8 h-8 rounded-xl border border-gray-200 text-[11px] font-extrabold text-gray-500 hover:text-[#2E7D32] hover:border-[#2E7D32]/30 hover:bg-[#f0fdf4] transition-all duration-300"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M2 12h20"/>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-                {T.langToggle}
+                {language === 'ar' ? 'EN' : 'عربي'}
               </button>
 
               {/* User dropdown */}
               <div className="relative" data-user-menu>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-600 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[13px] font-bold text-gray-700 bg-gray-50/80 hover:bg-gray-100 transition-all duration-300 hover:shadow-sm"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="8" r="4" />
                       <path d="M6 20c0-4 3-6 6-6s6 2 6 6" />
                     </svg>
                   </div>
                   {userFullName || 'المستخدم'}
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
                 </button>
 
                 {showUserMenu && (
                   <div className="absolute left-0 top-full mt-2 w-48 bg-white/95 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-scale-in" style={{ transformOrigin: 'top left' }}>
-                    <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right">
+                    <button onClick={() => { go("profile"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right font-semibold">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="8" r="4" /><path d="M6 20c0-4 3-6 6-6s6 2 6 6" /></svg> {T.myAccount}
                     </button>
-                    <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50">
+                    <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50 font-semibold">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> {T.settings}
                     </button>
                     <button
                       onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> {T.logout}
                     </button>
                   </div>
@@ -301,17 +324,15 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
             {/* Content Area */}
             <div className="flex-1 min-h-0 overflow-auto">
               {page === "dashboard" ? (
-                <DashboardHome onGo={go} onSendAI={sendToAI} />
-              ) : page === "recs" ? (
-                <RecommendationsPage onBack={() => go("dashboard")} />
+                <DashboardHome onGo={go} onSendAI={sendToAI} globalAutoMode={globalAutoMode} />
+              ) : page === "dss" ? (
+                <DecisionSupportPage onBack={() => go("dashboard")} />
               ) : page === "irrigation" ? (
-                <IrrigationPage onBack={() => go("dashboard")} mode={mode} />
-              ) : page === "temp" ? (
-                <TemperaturePage onBack={() => go("dashboard")} />
-              ) : page === "airHumidity" ? (
-                <AirHumidityPage onBack={() => go("dashboard")} />
-              ) : page === "soilMoisture" ? (
-                <SoilMoisturePage onBack={() => go("dashboard")} />
+                <IrrigationPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
+              ) : page === "microclimate" ? (
+                <MicroclimatePage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
+              ) : page === "soil" ? (
+                <SoilCropHealthPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
               ) : page === "profile" ? (
                 <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
               ) : page === "settings" ? (

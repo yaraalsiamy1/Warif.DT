@@ -11,6 +11,29 @@ function CardShell({ children, className = "" }) {
   );
 }
 
+export function AutomationToggleCard({ isActive, onToggle, title="الأتمتة الذكية (Intelligent Automation)", description="تفويض الذكاء الاصطناعي للتحكم التلقائي بناءً على تحليل التوأم الرقمي." }) {
+  return (
+    <div className={`p-4 rounded-xl border transition-all duration-500 mb-4 flex items-center justify-between gap-4 cursor-pointer shadow-sm ${isActive ? 'bg-[#f0fdf4] border-[#bbf7d0]' : 'bg-gray-50 border-gray-200'}`} onClick={() => onToggle(!isActive)}>
+      <div className="flex items-center gap-3">
+         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${isActive ? 'bg-[#16a34a] text-white shadow-md shadow-green-500/20' : 'bg-white text-gray-400 border border-gray-200'}`}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+         </div>
+         <div>
+           <div className={`font-bold text-[15px] ${isActive ? 'text-[#166534]' : 'text-gray-700'}`}>{title}</div>
+           <div className={`text-[12px] font-medium mt-0.5 max-w-sm ${isActive ? 'text-[#15803d]' : 'text-gray-500'}`}>{description}</div>
+         </div>
+      </div>
+      
+      {/* iOS Style Toggle Switch */}
+      <div className={`w-14 h-7 flex items-center rounded-full p-1 shrink-0 transition-colors duration-500 ${isActive ? 'bg-[#16a34a]' : 'bg-gray-300'}`}>
+        <div className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-500 ${isActive ? 'translate-x-0' : '-translate-x-7'}`} style={{ direction: 'ltr' }}></div>
+      </div>
+    </div>
+  );
+}
+
 function CardTopRow({ title, subtitle, onDetails, detailsLabel = "التفاصيل" }) {
   return (
     <div className="flex items-start justify-between gap-3">
@@ -35,6 +58,28 @@ function TempSunIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5" fill="#FDE68A" />
       <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+    </svg>
+  );
+}
+
+function WeatherIcon({ weatherData, width=18, height=18 }) {
+  if (!weatherData) return <svg width={width} height={height} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/></svg>;
+  
+  const { code, isDay } = weatherData;
+
+  if (code >= 51 && code <= 99) {
+     return <svg width={width} height={height} viewBox="0 0 24 24" fill="#bfdbfe" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 16.2A4.5 4.5 0 0 0 17.5 8h-1.8A7 7 0 1 0 4 14.9"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>;
+  }
+  if (code >= 1 && code <= 48) {
+     return <svg width={width} height={height} viewBox="0 0 24 24" fill="#f1f5f9" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>;
+  }
+  if (isDay === false) { // Night clear
+     return <svg width={width} height={height} viewBox="0 0 24 24" fill="#a5b4fc" stroke="#4f46e5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+  }
+  return (
+    <svg width={width} height={height} viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" fill="#fde68a" />
+      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
     </svg>
   );
 }
@@ -1580,4 +1625,5 @@ export {
   Account_TrashIcon,
   Account_PlusIcon,
   Account_SensorIcon,
+  WeatherIcon,
 };
