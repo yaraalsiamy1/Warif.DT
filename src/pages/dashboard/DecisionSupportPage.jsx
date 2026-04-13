@@ -7,7 +7,7 @@ export function DecisionSupportPage({ onBack }) {
       {
         id: "r0",
         type: "anomaly",
-        title: "لم يتم اكتشاف أي شذوذ بيئي (No Anomalies)",
+        title: "حالة الاستقرار البيئي مثالية",
         desc: "نظام الذكاء الاصطناعي يؤكد استقرار قراءات التربة والمناخ (معدل الثبات 98%).",
         meta: "الآن",
         icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
@@ -35,7 +35,7 @@ export function DecisionSupportPage({ onBack }) {
         id: "r3",
         type: "humidity",
         title: "التوصية: تهوية خفيفة للهواء",
-        desc: "الرطوبة المحسوبة تقترب من نقطة تكاثف الفطريات (Dew point). يرجى فتح النوافذ العلوية للتهوية.",
+        desc: "الرطوبة مرتفعة؛ يرجى فتح النوافذ العلوية لتهوية المحمية فوراً وضمان تجدد الهواء.",
         meta: "قبل 20 دقيقة",
         icon: <AirHumidityIcon />,
         tone: "warning",
@@ -44,7 +44,7 @@ export function DecisionSupportPage({ onBack }) {
         id: "r4",
         type: "heat",
         title: "إجراء مؤتمت: تفعيل التظليل",
-        desc: "لحماية المحصول من الإشعاع الشمسي المرتفع (UV Index)، تم تفعيل التظليل الآلي جزئياً.",
+        desc: "لحماية النباتات من الإشعاع الشمسي المرتفع، تم تفعيل التظليل الآلي جزئياً.",
         meta: "قبل 35 دقيقة",
         icon: <TempSunIcon />,
         tone: "info",
@@ -62,9 +62,9 @@ export function DecisionSupportPage({ onBack }) {
 
   const badgeClass = (tone) => {
     if (tone === "warning")
-      return "bg-[#FFF7ED] text-[#ea580c] border-[#FED7AA]";
+      return "bg-emerald-50 text-[#2E7D32] border-emerald-100 shadow-sm opacity-90";
     if (tone === "ok") return "bg-[#E8F5E9] text-[#1B5E20] border-[#A5D6A7]";
-    return "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]";
+    return "bg-emerald-50 text-[#10b981] border-emerald-100";
   };
 
   const filterBtn = (key) =>
@@ -74,30 +74,45 @@ export function DecisionSupportPage({ onBack }) {
     }`;
 
   return (
-    <div className="w-full h-full p-6 overflow-auto page-enter" dir="rtl">
-      <div className="w-full max-w-[1000px] mx-auto flex flex-col gap-6">
+    <div className="w-full h-full p-5 overflow-auto page-enter" dir="rtl">
+      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-5">
         <SensorTopBar
-          title="نظام دعم اتخاذ القرار (DSS Module)"
-          subtitle="توليد التوصيات الذكية الاستباقية وتقارير التتبع المبني على التوأم الرقمي."
+          title="مركز التوصيات الذكية"
+          subtitle="توليد التوصيات الذكية الاستباقية وتقارير التتبع المبني على التوأم الرقمي للمحمية."
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>}
           onBack={onBack}
-          onExport={() => alert('جاري تصدير تقرير دعم القرار...')}
+          onExport={() => {
+            const dateStr = new Date().toLocaleDateString('ar-SA');
+            const titleRow = "سجل التوصيات والقرارات الذكية - نظام وارِف";
+            const periodRow = `تاريخ التصدير: ${dateStr}`;
+            const headers = ["التوقيت", "الحالة", "التوصية"].join(",");
+            const rows = items.map((it) => `${it.meta},${it.tone},${it.title}`).join("\n");
+            const csv = "\ufeff" + titleRow + "\n" + periodRow + "\n\n" + headers + "\n" + rows;
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `سجل_التوصيات_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
         />
 
         {/* AI Insight Bar */}
-        <div className="bg-gradient-to-r from-blue-50/50 to-green-50/50 rounded-2xl border border-blue-100/50 p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+        <div className="bg-gradient-to-r from-emerald-50/50 to-green-50/50 rounded-2xl border border-emerald-100/50 p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
            <div className="flex items-center gap-4">
              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-gray-100 shadow-sm">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
              </div>
              <div>
-               <div className="text-[16px] font-bold text-gray-800">حالة الخوارزميات (Algorithms Status)</div>
+               <div className="text-[16px] font-bold text-gray-800">حالة خوارزميات التحليل الرقمي</div>
                <div className="text-[13px] text-gray-600 mt-1">يتم دراسة أكثر من 15 ألف نقطة بيانات في الثانية لتحسين قرارات الري والمناخ.</div>
              </div>
            </div>
            <div className="flex gap-2">
              <span className="bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-[12px] font-bold text-gray-700 shadow-sm">دقة التنبؤ: 94.2%</span>
-             <span className="bg-[#E8F5E9] px-3 py-1.5 rounded-xl border border-green-200 text-[12px] font-bold text-[#1B5E20] shadow-sm">طبيعي (Normal)</span>
+             <span className="bg-[#E8F5E9] px-3 py-1.5 rounded-xl border border-green-200 text-[12px] font-bold text-[#1B5E20] shadow-sm">وضع طبيعي</span>
            </div>
         </div>
 
@@ -105,34 +120,10 @@ export function DecisionSupportPage({ onBack }) {
         <CardShell className="p-5 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-[15px] font-bold text-gray-800">تصفية التوصيات والقرارات المؤتمتة:</div>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={filterBtn("all")}
-              onClick={() => setFilter("all")}
-            >
-              الكل (All)
-            </button>
-            <button
-              type="button"
-              className={filterBtn("anomaly")}
-              onClick={() => setFilter("anomaly")}
-            >
-              اكتشاف الشذوذ (Anomaly)
-            </button>
-            <button
-              type="button"
-              className={filterBtn("irrigation")}
-              onClick={() => setFilter("irrigation")}
-            >
-              قرارات الري (Irrigation)
-            </button>
-            <button
-              type="button"
-              className={filterBtn("heat")}
-              onClick={() => setFilter("heat")}
-            >
-              قرارات المناخ (Climate)
-            </button>
+            <button type="button" className={filterBtn("all")} onClick={() => setFilter("all")}>الكل</button>
+            <button type="button" className={filterBtn("anomaly")} onClick={() => setFilter("anomaly")}>تنبيهات الشذوذ</button>
+            <button type="button" className={filterBtn("irrigation")} onClick={() => setFilter("irrigation")}>إدارة الري</button>
+            <button type="button" className={filterBtn("heat")} onClick={() => setFilter("heat")}>إدارة المناخ</button>
           </div>
         </CardShell>
 
@@ -153,7 +144,7 @@ export function DecisionSupportPage({ onBack }) {
                   }`}
               >
                 <div className="flex items-start gap-4 min-w-0 flex-1">
-                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-sm bg-white ${it.tone === 'warning' ? 'border-[#FED7AA]' : it.tone === 'ok' ? 'border-[#A5D6A7]' : 'border-[#BFDBFE]'}`}>
+                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-sm bg-white ${it.tone === 'warning' ? 'border-emerald-200' : it.tone === 'ok' ? 'border-[#A5D6A7]' : 'border-emerald-100'}`}>
                     {it.icon}
                   </div>
 
@@ -171,7 +162,7 @@ export function DecisionSupportPage({ onBack }) {
                       </span>
                     </div>
 
-                    <div className="text-[14px] text-gray-500 leading-relaxed max-w-[80%] font-medium">
+                    <div className="text-[14px] text-gray-500 leading-relaxed max-w-2xl font-medium">
                       {it.desc}
                     </div>
                   </div>

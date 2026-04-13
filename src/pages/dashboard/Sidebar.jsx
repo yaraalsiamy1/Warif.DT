@@ -5,11 +5,11 @@ export function Sidebar({ currentPage, onGo, T }) {
   const [activeFarm, setActiveFarm] = useState(0);
 
   const modulesMenu = [
-    { label: "الرئيسية (Dashboard)", icon: "dashboard", page: "dashboard" },
-    { label: "المناخ الدقيق", icon: "microclimate", page: "microclimate" },
-    { label: "صحة التربة والمحصول", icon: "soil", page: "soil" },
-    { label: "إدارة الري والموارد", icon: "irrigation", page: "irrigation" },
-    { label: "دعم اتخاذ القرار (DSS)", icon: "dss", page: "dss", badge: "تنبيه" },
+    { label: "الرئيسية", icon: "dashboard", page: "dashboard" },
+    { label: "المناخ والتهوية", icon: "microclimate", page: "microclimate" },
+    { label: "بيانات التربة والري", icon: "soil", page: "soil" },
+    { label: "إدارة الموارد المائية", icon: "irrigation", page: "irrigation" },
+    { label: "التوصيات الذكية", icon: "dss", page: "dss", badge: "تنبيه" },
   ];
 
   const farms = ["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"];
@@ -18,16 +18,16 @@ export function Sidebar({ currentPage, onGo, T }) {
     <div className="w-64 bg-white/80 backdrop-blur-sm border-l border-gray-100/60 flex flex-col flex-shrink-0 h-full">
       {/* Logo and System Name */}
       <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-1 border-b border-gray-100/60 mx-4">
-        <img src="/logo.png" alt="نظام وارِف - Warif System" className="w-36 h-auto object-contain cursor-pointer drop-shadow-sm hover:scale-105 transition-transform duration-300" onClick={() => onGo("dashboard")} />
+        <img src="/logo.png" alt="نظام وارِف" className="w-36 h-auto object-contain cursor-pointer drop-shadow-sm hover:scale-105 transition-transform duration-300" onClick={() => onGo("dashboard")} />
         <div className="text-[15px] font-extrabold text-gray-800 tracking-wide mt-2">نظام وارِف</div>
         <div className="text-[10px] font-black text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-0.5 rounded border border-green-200 mt-1 uppercase tracking-widest flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse" /> DIGITAL TWIN
+          <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse" /> التوأم الرقمي
         </div>
       </div>
 
       {/* المحميات */}
       <div className="p-4 border-b border-gray-50/80">
-        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">تحديد المحمية المادية</div>
+        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">اختيار المحمية</div>
         {farms.map((farm, i) => (
           <div key={farm} onClick={() => { setActiveFarm(i); onGo("dashboard"); }} className={`sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer text-[13px] mb-1 transition-all duration-300 ${activeFarm === i ? "active bg-[#f0fdf4] text-[#16a34a] font-bold shadow-sm border border-green-100" : "text-gray-500 hover:bg-gray-50"
             }`}>
@@ -40,7 +40,7 @@ export function Sidebar({ currentPage, onGo, T }) {
       {/* الوحدات التحليلية للمشروع (Modules) */}
       {/* الوحدات التحليلية للمشروع (Modules) */}
       <div className="p-4 flex-1">
-        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">وحدات الذكاء الاصطناعي</div>
+        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">تنسيق وتشغيل الوحدات</div>
         {modulesMenu.map((item) => (
           <div key={item.page} onClick={() => onGo(item.page)}
             className={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-[13px] font-bold mb-1 transition-all duration-300 ${currentPage === item.page ? "active bg-[#f0fdf4] text-[#16a34a] shadow-sm border border-green-200" : "text-gray-600 hover:bg-gray-50/80"
@@ -60,10 +60,6 @@ export function Sidebar({ currentPage, onGo, T }) {
         ))}
       </div>
       
-      {/* Footer Branding */}
-      <div className="mt-auto p-4 border-t border-gray-100/60 pb-6 text-center">
-         <div className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Powered By Antigravity</div>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { translations } from "../i18n";
-import { Sidebar, DashboardHome, DecisionSupportPage, IrrigationPage, MicroclimatePage, SoilCropHealthPage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
+import { Sidebar, DashboardHome, DecisionSupportPage, IrrigationPage, MicroclimatePage, SoilRootDataPage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
 import { WeatherIcon } from "./dashboard/dashboardShared";
 
 /* =========================================================
@@ -141,6 +141,9 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
       { id: "S1", name: "حساس التربة",   type: "رطوبة التربة",  value: "42%",  status: "normal" },
       { id: "S2", name: "حساس الحرارة", type: "درجة الحرارة",  value: "31°C", status: "warning" },
       { id: "S3", name: "حساس الرطوبة", type: "رطوبة الهواء",  value: "58%",  status: "normal" },
+      { id: "P1", name: "مضخة الري الرئيسية", type: "مضخة مياه", value: "تعمل", status: "normal" },
+      { id: "F1", name: "مروحة تبريد 1", type: "مروحة", value: "نشط", status: "normal" },
+      { id: "A1", name: "وحدة التكييف", type: "مكيف", value: "خامل", status: "normal" },
     ];
   });
 
@@ -221,22 +224,10 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
               <div className="flex flex-col">
                  <div className="text-[10px] font-bold text-gray-400 mb-0.5 tracking-wide">المحميات المادية / محمية الخضروات /</div>
                  <div className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2">
-                   {page === "dashboard" ? "الرئيسية (Dashboard)" : page === "microclimate" ? "وحدة المناخ الدقيق" : page === "soil" ? "صحة التربة والمحصول" : page === "irrigation" ? "إدارة الري والموارد" : page === "dss" ? "نظام دعم اتخاذ القرار" : "إعدادات النظام"}
+                   {page === "dashboard" ? "الرئيسية (لوحة التحكم)" : page === "microclimate" ? "وحدة المناخ الدقيق" : page === "soil" ? "بيانات التربة" : page === "irrigation" ? "إدارة الري والموارد" : page === "dss" ? "نظام دعم اتخاذ القرار" : "إعدادات النظام"}
                  </div>
               </div>
               
-              <div className="h-8 w-px bg-gray-200 mx-2" />
-              
-              {/* Connected sensors */}
-              <div className="relative" data-sensors-popup>
-                <button
-                  onClick={() => setShowSensorsPopup(v => !v)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold bg-[#f0fdf4] text-[#2E7D32] border border-[#bbf7d0] hover:bg-[#dcfce7] hover:shadow-sm transition-all duration-300 cursor-pointer shadow-sm"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a] animate-pulse" />
-                  {connectedSensors.length} {T.sensorsConnected}
-                </button>
-              </div>
             </div>
 
             {/* Center: Master AI Switch */}
@@ -324,7 +315,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
             {/* Content Area */}
             <div className="flex-1 min-h-0 overflow-auto">
               {page === "dashboard" ? (
-                <DashboardHome onGo={go} onSendAI={sendToAI} globalAutoMode={globalAutoMode} />
+                <DashboardHome onGo={go} onSendAI={sendToAI} globalAutoMode={globalAutoMode} onOpenAssets={() => setShowSensorsPopup(true)} />
               ) : page === "dss" ? (
                 <DecisionSupportPage onBack={() => go("dashboard")} />
               ) : page === "irrigation" ? (
@@ -332,7 +323,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
               ) : page === "microclimate" ? (
                 <MicroclimatePage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
               ) : page === "soil" ? (
-                <SoilCropHealthPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
+                <SoilRootDataPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
               ) : page === "profile" ? (
                 <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
               ) : page === "settings" ? (
@@ -409,31 +400,51 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[9999]" dir="rtl" onClick={() => setShowSensorsPopup(false)}>
           <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-[420px] max-w-[92vw] overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
             <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <div className="text-[16px] font-bold text-gray-800">الحساسات المتصلة</div>
-                <div className="text-[13px] text-gray-400 mt-0.5">آخر تحديث قبل 5 دقائق</div>
+              <div className="flex-1">
+                <div className="text-[16px] font-bold text-gray-800">الحساسات والأجهزة</div>
+                <div className="text-[13px] text-gray-400 mt-0.5">حالة الاتصال والتشغيل الآن</div>
               </div>
-              <button onClick={() => setShowSensorsPopup(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => { go("settings"); setShowSensorsPopup(false); }}
+                  className="px-3 py-1.5 rounded-xl bg-gray-50 text-[12px] font-bold text-[#16a34a] border border-gray-100 hover:bg-green-50 transition-all flex items-center gap-1.5"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  تعديل
+                </button>
+                <button onClick={() => setShowSensorsPopup(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
             </div>
             <div className="p-3 flex flex-col gap-2">
               {connectedSensors.map((s, i) => (
                 <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 bg-[#fafafa] hover:bg-gray-50 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${s.status === 'warning' ? 'bg-[#FFF7ED]' : 'bg-[#E8F5E9]'}`}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2" strokeLinecap="round">
-                        <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill={s.status === 'warning' ? '#ea580c' : '#2E7D32'} />
-                      </svg>
+                      {s.type.includes('مضخة') ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      ) : s.type.includes('مروحة') || s.type.includes('مكيف') ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2" strokeLinecap="round">
+                          <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill={s.status === 'warning' ? '#ea580c' : '#2E7D32'} />
+                        </svg>
+                      )}
                     </div>
                     <div className="text-right leading-tight">
                       <div className="text-[14px] font-semibold text-gray-800">{s.name}</div>
                       <div className="text-[12px] text-gray-400">{s.type}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[14px] font-bold ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c] animate-pulse' : 'bg-[#16a34a]'}`} />
+                  <div className="flex items-center gap-4">
+                    <div className="text-left flex flex-col items-end">
+                      <div className="text-[9px] font-bold text-gray-400 mb-0.5 tracking-tight">القراءة اللحظية</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[15px] font-black ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
+                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c] animate-pulse' : 'bg-[#16a34a]'}`} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

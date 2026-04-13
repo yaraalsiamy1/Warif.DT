@@ -12,8 +12,8 @@ export function PlaceholderPage({ page, onBack }) {
   const title = titleMap[page] || "صفحة";
 
   return (
-    <div className="w-full h-full p-6 overflow-auto">
-      <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full h-full p-5 overflow-auto page-enter" dir="rtl">
+      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="text-xl font-bold text-gray-800">{title}</div>
@@ -34,7 +34,7 @@ export function PlaceholderPage({ page, onBack }) {
           </button>
         </div>
 
-        <div className="mt-6 bg-white rounded-2xl shadow border border-gray-200 p-6 text-gray-700">
+        <div className="mt-6 bg-white rounded-2xl shadow border border-gray-200 p-5 text-gray-700">
           هنا مكان محتوى الصفحة (قريبًا).
         </div>
       </div>

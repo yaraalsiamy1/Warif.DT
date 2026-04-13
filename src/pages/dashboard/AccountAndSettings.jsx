@@ -144,7 +144,7 @@ export function AccountAndSettingsPages({ initialPage = "profile", onBack, onLog
       className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic'] overflow-auto"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
-      <div className="w-full max-w-3xl mx-auto p-6 flex flex-col gap-5">
+      <div className="w-full max-w-3xl mx-auto p-5 flex flex-col gap-5">
 
         {/* Page Header */}
         <div className="flex items-center justify-between animate-fade-in-down">
@@ -246,7 +246,7 @@ export function AccountAndSettingsPages({ initialPage = "profile", onBack, onLog
                 {T.cancel}
               </button>
               <button type="button" onClick={saveEdit}
-                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]">
+                className="px-6 py-2.5 rounded-xl bg-[#2E7D32] text-white text-[14px] font-black hover:bg-[#1B5E20] shadow-md hover:shadow-lg transition-all duration-300">
                 {T.save}
               </button>
             </div>
@@ -295,7 +295,7 @@ export function AccountAndSettingsPages({ initialPage = "profile", onBack, onLog
                 {T.cancel}
               </button>
               <button type="button" onClick={saveSensorModal}
-                className="px-4 py-2 rounded-xl bg-[#2E7D32] text-white text-sm hover:bg-[#1B5E20]">
+                className="px-6 py-2.5 rounded-xl bg-[#2E7D32] text-white text-[14px] font-black hover:bg-[#1B5E20] shadow-md hover:shadow-lg transition-all duration-300">
                 {T.save}
               </button>
             </div>
@@ -441,7 +441,7 @@ function Account_SettingsPage({ T, language, setLanguage, sensors, onAddSensor, 
             right={
               <button
                 onClick={() => { localStorage.removeItem('warif_remember'); onLogout?.(); }}
-                className="px-4 py-2 rounded-xl bg-[#c62828] text-white text-sm hover:bg-[#b71c1c] transition-all duration-300"
+                className="px-7 py-2.5 rounded-xl bg-[#c62828] text-white text-[14px] font-black hover:bg-[#b71c1c] shadow-md hover:shadow-lg transition-all duration-300 active:scale-95"
               >
                 {T.logoutBtn}
               </button>

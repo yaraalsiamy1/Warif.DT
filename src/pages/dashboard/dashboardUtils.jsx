@@ -235,7 +235,7 @@ function sensorGenerateLineSeries({
   return out;
 }
 
-function sensorBuildRecommendationsTemperature(current) {
+export function sensorBuildRecommendationsTemperature(current) {
   const rec = [];
   if (current >= 35) {
     rec.push(
@@ -246,18 +246,18 @@ function sensorBuildRecommendationsTemperature(current) {
     rec.push(
       "درجة الحرارة منخفضة: يوصى بتقليل التهوية وتفعيل التدفئة إن وجدت."
     );
-    rec.push("تأكد من عدم حدوث تكاثف يزيد فرص الأمراض الفطرية.");
+    rec.push("تأكد من ضبط التهوية لتفادي التكاثف وتسرب الرطوبة الزائدة.");
   } else {
     rec.push("الحرارة ضمن النطاق المقبول: استمر بالمراقبة الدورية.");
   }
   return rec;
 }
 
-function sensorBuildRecommendationsHumidity(current) {
+export function sensorBuildRecommendationsHumidity(current) {
   const rec = [];
   if (current >= 80) {
     rec.push("الرطوبة مرتفعة: يوصى بزيادة التهوية وتقليل الرش/الري الضبابي.");
-    rec.push("ارفع وتيرة الفحص للأمراض الفطرية (البياض/العفن).");
+    rec.push("افحص منافذ التهوية وتأكد من جفاف الأسطح المحيطة.");
   } else if (current <= 35) {
     rec.push("الرطوبة منخفضة: يوصى بضبط نظام الترطيب أو إعادة جدولة الري.");
     rec.push("احرص على عدم تعريض الأوراق للجفاف لفترات طويلة.");
@@ -267,7 +267,7 @@ function sensorBuildRecommendationsHumidity(current) {
   return rec;
 }
 
-function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
+export function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
   const rec = [];
   if (soilMoist <= 25) {
     rec.push(
@@ -283,16 +283,66 @@ function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
   return rec;
 }
 
+function generateDataForRange(range, { base, amp, noise, min, max, seed }) {
+  let s = seed || 7;
+  const rnd = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-indexed
+  const currentDay = now.getDate();
+  const currentHour = now.getHours();
+
+  const getPoints = () => {
+    switch (range) {
+      case 'D': return 24;   
+      case 'W': return 7;    
+      case 'M': return 30;   
+      case '6M': return 6;   
+      case 'Y': return 12;   
+      default: return 30;
+    }
+  };
+
+  const points = getPoints();
+  const out = [];
+  for (let i = 0; i < points; i++) {
+    // Logic to hide future data
+    let isFuture = false;
+    if (range === 'Y' && i > currentMonth) isFuture = true;
+    if (range === 'M' && i + 1 > currentDay) isFuture = true;
+    if (range === 'D' && i > currentHour) isFuture = true;
+    // For 'W' and '6M', we'll simplify: if i > some threshold, it's future. 
+    // In a real app we'd check actual dates.
+    if (range === 'W' && i > 3) isFuture = false; // Just showing a few days for week demo
+
+    if (isFuture) continue;
+
+    const wave = Math.sin((i / (points/4)) * Math.PI) * amp;
+    const jitter = (rnd() - 0.5) * noise;
+    const v = Math.max(min, Math.min(max, base + wave + jitter));
+    
+    let label = '';
+    if (range === 'D') label = `${i}:00`;
+    else if (range === 'W') label = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"][i % 7];
+    else if (range === 'M') label = `${i + 1}`;
+    else if (range === '6M' || range === 'Y') label = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"][i % 12];
+
+    out.push({ label, value: Number(v.toFixed(1)) });
+  }
+  return out;
+}
+
 export {
   irrigationClamp,
   irrigationDaysInMonth,
   generateIrrigationUsageSeries,
   sensorDaysInMonth,
   sensorGenerateLineSeries,
-  sensorBuildRecommendationsTemperature,
-  sensorBuildRecommendationsHumidity,
-  sensorBuildRecommendationsSoil,
   sensorMakeMonthOptionsAr,
   sensorGetUpdateText,
   sensorIsFutureMonth,
+  generateDataForRange
 };
