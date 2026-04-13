@@ -102,43 +102,61 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
     setChatMessages(prev => [...prev, { role: "user", text: userMessage }]);
     setChatMessages(prev => [...prev, { role: "bot", text: "جاري التفكير..." }]);
 
+    // Build live sensor snapshot from connected sensors state
+    const soilSensor  = connectedSensors.find(s => s.type === 'رطوبة التربة');
+    const tempSensor  = connectedSensors.find(s => s.type === 'درجة الحرارة');
+    const humSensor   = connectedSensors.find(s => s.type === 'رطوبة الهواء');
+
+    const parseFlt = (str) => parseFloat((str || '').replace(/[^\d.]/g, '')) || null;
+
+    const alerts = connectedSensors
+      .filter(s => s.status === 'warning' || s.status === 'danger')
+      .map(s => `${s.name}: ${s.value}`);
+
+    const sensorPayload = {
+      timestamp: new Date().toISOString(),
+      crop: "cucumber",
+      growth_stage: "fruiting",
+      soil: {
+        moisture_percent: parseFlt(soilSensor?.value),
+        temperature_celsius: null,
+        ph: null,
+        ec: null,
+      },
+      air: {
+        temperature_celsius: parseFlt(tempSensor?.value),
+        humidity_percent: parseFlt(humSensor?.value),
+        co2_ppm: null,
+      },
+      alerts,
+    };
+
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("http://127.0.0.1:8000/chatbot/ask", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-opus-4-5",
-          max_tokens: 1024,
-          system: `أنت مساعد ذكي لنظام وارِف لإدارة المحميات الزراعية. 
-          المستخدم اسمه ${userFullName || 'مستخدم'}.
-          بيانات المحمية الحالية:
-          - اسم المحمية: محمية الخضروات
-          - درجة الحرارة: 31°C (أعلى من المثالي 22-28°C)
-          - رطوبة الهواء: 58% (ضمن النطاق المثالي)
-          - رطوبة التربة: 42% (ضمن النطاق المثالي)
-          - معدل الري: 60% (متوسط)
-          أجب باللغة العربية بشكل مختصر وواضح.`,
-          messages: [{ role: "user", content: userMessage }],
+          question: userMessage,
+          sensor_data: sensorPayload,
+          n_chunks: 4,
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
-      const aiText = data.content[0].text;
 
       setChatMessages(prev => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "bot", text: aiText };
+        updated[updated.length - 1] = { role: "bot", text: data.answer };
         return updated;
       });
     } catch (error) {
       setChatMessages(prev => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: "bot", text: "حدث خطأ، حاول مرة ثانية." };
+        updated[updated.length - 1] = { role: "bot", text: "حدث خطأ في الاتصال بالمساعد. تأكد من تشغيل الخادم." };
         return updated;
       });
     }
