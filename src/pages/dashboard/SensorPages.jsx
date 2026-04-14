@@ -1,259 +1,322 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { 
   SensorTopBar, 
   CardShell, 
-  TempSunIcon, 
-  AirHumidityIcon, 
-  SoilDropIcon, 
-  SensorPill, 
-  SensorPrimaryButton 
+  PlantSoilIcon,
+  WindIcon
 } from './dashboardShared';
-import { HealthStyleBarChart } from './dashboardCharts';
+import { HealthStyleBarChart, IrrigationActionButton } from './dashboardCharts';
 import { 
   generateDataForRange, 
   sensorBuildRecommendationsTemperature, 
   sensorBuildRecommendationsHumidity, 
-  sensorBuildRecommendationsSoil 
+  sensorBuildRecommendationsSoil,
+  formatLastUpdated,
+  getLiveFarmData
 } from './dashboardUtils';
 
 /* =========================================================
-   1. Microclimate Module (مناخ المحمية)
-   Combines Temp and Humidity metrics
+   1. Microclimate Module (المناخ والتهوية)
 ========================================================= */
-export function MicroclimatePage({ onBack, globalAutoMode }) {
-  const [range, setRange] = useState("W");
+export function MicroclimatePage({ onBack, globalAutoMode, activeFarm }) {
+  const [seconds, setSeconds] = useState(0);
   const [activeAction, setActiveAction] = useState("");
 
-  const tempSeries = useMemo(() => generateDataForRange(range, { base: 28, amp: 8, noise: 3, min: 10, max: 45, seed: 42 }), [range]);
-  const humSeries = useMemo(() => generateDataForRange(range, { base: 55, amp: 12, noise: 5, min: 20, max: 95, seed: 101 }), [range]);
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const isRtl = !isEn;
 
-  const currentTemp = 28.4;
-  const currentHum = 56;
+  const T = {
+    title: isEn ? "Climate & Ventilation" : "المناخ والتهوية",
+    subtitle: isEn ? "Smart analysis of temperature and air humidity." : "تحليل ذكي لدرجات الحرارة ورطوبة الهواء المحيط بالمحاصيل.",
+    readings: isEn ? "Sensor Readings" : "قراءات الحساسات",
+    temp: isEn ? "Air Temp" : "حرارة الهواء",
+    hum: isEn ? "Air Hum" : "رطوبة الهواء",
+    recs: isEn ? "Climate Recs" : "توصيات المناخ",
+    smartAnalysis: isEn ? "Smart Analysis" : "تحليل ذكي",
+    recsSub: isEn ? "Suggested actions to maintain stability." : "إجراءات مقترحة للحفاظ على استقرار المحيط",
+    reason: isEn ? "Reason:" : "السبب:",
+    control: isEn ? "Climate Control" : "التحكم في مناخ المزرعة",
+    autoSub: isEn ? "Based on central automation status" : "يعتمد على حالة الأتمتة المركزية",
+    autoActive: isEn ? "System is managed automatically. Manual controls are locked for stability." : "النظام يدار تلقائياً الآن. جميع أزرار التحكم اليدوي مقفلة لحفظ استقرار المحمية.",
+    startCooling: isEn ? "Start Manual Cooling" : "بدء التبريد اليدوي",
+    stopFans: isEn ? "Stop Fans" : "إيقاف المراوح",
+    trendTitle: isEn ? "Climate Trend Analysis" : "تحليل الميول المناخية",
+    trendSub: isEn ? "Tracking thermal changes for the digital twin." : "تتبع التغيرات الزمنية في الحرارة والرطوبة للتوأم الرقمي",
+    climateLog: isEn ? "Microclimate Bio-Log Patterns" : "أنماط السجل الحيوي للمناخ والتهوية",
+    climateLogSub: isEn ? "Historical sensor pattern discovery." : "اكتشاف الأنماط التاريخية للحساسات.",
+    tempChart: isEn ? "Temperature Trend" : "مسار درجة الحرارة",
+    humChart: isEn ? "Air Humidity Trend" : "مسار رطوبة الهواء",
+    tempY: isEn ? "Temp (°C)" : "درجة الحرارة (°C)",
+    humY: isEn ? "Humidity (%)" : "رطوبة الهواء (٪)",
+    lastUpdateAr: "آخر تحديث",
+    lastUpdateEn: "Last Update",
+  };
+
+  useEffect(() => {
+    setSeconds(0);
+    const interval = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeFarm]);
+
+  const [range, setRange] = useState("W");
+  const data = getLiveFarmData(activeFarm);
+  const lastUpdateLabel = formatLastUpdated(seconds, T.lastUpdateAr, T.lastUpdateEn);
+
+  const tempSeries = useMemo(() => generateDataForRange(range, { 
+    base: 28, amp: 8, noise: 3, min: 10, max: 45, seed: 42, farmIndex: activeFarm
+  }), [range, activeFarm]);
+  
+  const humSeries = useMemo(() => generateDataForRange(range, { 
+    base: 55, amp: 12, noise: 5, min: 20, max: 95, seed: 101, farmIndex: activeFarm
+  }), [range, activeFarm]);
+
+  const recommendations = useMemo(() => [
+    ...sensorBuildRecommendationsTemperature(data.temp),
+    ...sensorBuildRecommendationsHumidity(data.hum)
+  ], [data.temp, data.hum]);
 
   return (
-    <div className="w-full h-full p-5 overflow-auto page-enter" dir="rtl">
-      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-4">
-        
+    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-6">
+
         <SensorTopBar
-          title="المناخ والتهوية"
-          subtitle="مراقبة لحظية لدرجة الحرارة والرطوبة داخل المحمية مع تحكم آلي بأنظمة التبريد."
-          icon={<TempSunIcon />}
+          title={T.title}
+          subtitle={T.subtitle}
+          icon={<WindIcon />}
           onBack={onBack}
-          onExport={() => {
-            const dateStr = new Date().toLocaleDateString('ar-SA');
-            const titleRow = "تقرير المناخ والتهوية الشامل - نظام وارِف";
-            const periodRow = `تاريخ التصدير: ${dateStr}`;
-            const headers = ["التوقيت", "حرارة الهواء (°C)", "رطوبة الهواء (%)"].join(",");
-            const rows = tempSeries.map((d, i) => `${d.label},${d.value},${humSeries[i]?.value || ''}`).join("\n");
-            const csv = "\ufeff" + titleRow + "\n" + periodRow + "\n\n" + headers + "\n" + rows;
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", `تقرير_المناخ_الشامل_${dateStr}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          
-          <CardShell className="p-5">
-            <div className="text-[16px] font-bold text-gray-800">القراءات اللحظية</div>
-            <div className="text-[13px] text-gray-400 mt-1">قراءات الحساسات الموزعة</div>
-            <div className="mt-6 flex flex-col gap-4">
-               <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                  <span className="text-sm font-bold text-gray-500">الحرارة</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-gray-800">{currentTemp}</span>
-                    <span className="text-[12px] font-bold text-gray-400">°C</span>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.readings}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{lastUpdateLabel}</div>
+            </div>
+            <div className="flex flex-col gap-3">
+               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.temp}</span>
+                  <span className="text-xl font-black text-gray-800">{data.temp.toFixed(1)}°C</span>
                </div>
-               <div className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100">
-                  <span className="text-sm font-bold text-gray-500">الرطوبة</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-gray-800">{currentHum}</span>
-                    <span className="text-[12px] font-bold text-gray-400">%</span>
-                  </div>
+               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.hum}</span>
+                  <span className="text-xl font-black text-gray-800">{data.hum.toFixed(0)}٪</span>
                </div>
             </div>
           </CardShell>
 
-          <CardShell className="p-5">
-            <div className="text-[16px] font-bold text-gray-800 flex items-center gap-2">أحدث التوصيات الذكية <span className="bg-emerald-50 text-[#10b981] text-[10px] px-2 py-0.5 rounded-full border border-emerald-100">تحليل فوري</span></div>
-            <div className="text-[13px] text-gray-400 mt-1">بناءً على قراءات الحساسات الحالية</div>
-            <ul className="mt-6 text-[14px] text-gray-700 list-disc pr-5 flex flex-col gap-3 font-medium leading-relaxed">
-              {[...sensorBuildRecommendationsTemperature(currentTemp).slice(0,2), ...sensorBuildRecommendationsHumidity(currentHum).slice(0,1)].map((r, i) => (
-                <li key={i}>{r}</li>
-              ))}
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className={`text-lg font-bold text-gray-800 tracking-tight leading-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+                {T.recs} 
+                <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg border border-emerald-100/50 font-black">{T.smartAnalysis}</span>
+              </div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.recsSub}</div>
+            </div>
+            <ul className="flex flex-col gap-4">
+               {recommendations.slice(0, 2).map((rec, i) => (
+                  <li key={i} className={`flex gap-3 group/rec ${isEn ? 'flex-row-reverse text-left' : 'text-right'}`}>
+                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-sm" />
+                     <div className="flex flex-col gap-1">
+                        <div className="text-[14px] font-bold text-gray-800 leading-tight group-hover/rec:text-emerald-700 transition-colors">{rec.text}</div>
+                        <div className={`text-[11px] font-medium text-gray-400 leading-relaxed ${isEn ? 'border-l-2 pl-2' : 'border-r-2 pr-2'} border-emerald-500/20`}>
+                           <span className="text-emerald-600 mx-1">{T.reason}</span>
+                           {rec.reasoning}
+                        </div>
+                     </div>
+                  </li>
+               ))}
             </ul>
           </CardShell>
 
-          <CardShell className="p-5">
-            <div className="text-[16px] font-bold text-gray-800">إدارة التبريد والتهوية</div>
-            <div className="text-[13px] text-gray-400 mt-1">التحكم اليدوي والآلي</div>
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.control}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.autoSub}</div>
+            </div>
             {globalAutoMode ? (
-              <div className="mt-6 bg-[#f0fdf4] border border-[#bbf7d0] rounded-2xl p-5 text-center shadow-inner">
-                <div className="text-[#15803d] font-black text-[15px]">الأتمتة الذكية نشطة</div>
-                <div className="text-[#16a34a] text-[12px] mt-2 font-medium">يقوم النظام بضبط المراوح والتهوية تلقائياً للحفاظ على توازن المناخ داخل المحمية.</div>
-              </div>
+               <div className="bg-emerald-50/40 rounded-2xl p-4 text-center border border-emerald-100/30 flex items-center justify-center flex-1">
+                  <div className="text-emerald-800 font-black text-[12px] leading-relaxed">{T.autoActive}</div>
+               </div>
             ) : (
-              <div className="mt-6 flex flex-col gap-3">
-                <SensorPrimaryButton active={activeAction === "fans"} onClick={() => setActiveAction("fans")}>تشغيل المراوح المركزية</SensorPrimaryButton>
-                <SensorPrimaryButton active={activeAction === "ac"} onClick={() => setActiveAction("ac")}>تشغيل نظام التبريد الصحراوي</SensorPrimaryButton>
-                <SensorPrimaryButton active={activeAction === "vent"} onClick={() => setActiveAction("vent")}>فتح نوافذ التهوية الجانبية</SensorPrimaryButton>
-              </div>
+               <div className="flex flex-col gap-2">
+                  <span className="sr-only">Climate Control Actions</span>
+                  <IrrigationActionButton 
+                    active={activeAction === "cool"} onClick={() => setActiveAction("cool")}
+                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>}
+                  >{T.startCooling}</IrrigationActionButton>
+                  <IrrigationActionButton 
+                    active={activeAction === "stop"} onClick={() => setActiveAction("stop")}
+                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>}
+                  >{T.stopFans}</IrrigationActionButton>
+               </div>
             )}
           </CardShell>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-12">
-            <HealthStyleBarChart 
-              range={range}
-              onRangeChange={setRange}
-              data={tempSeries}
-              unit="°C"
-              metricName="حرارة الهواء"
-              xAxisTitle="الوقت"
-              yAxisTitle="الدرجة °C"
-            />
-            <HealthStyleBarChart 
-              range={range}
-              onRangeChange={setRange}
-              data={humSeries}
-              unit="%"
-              metricName="رطوبة الهواء"
-              xAxisTitle="الوقت"
-              yAxisTitle="النسبة %"
-            />
-        </div>
-
+        <CardShell className="p-6">
+           <div className={`mb-2 ${isEn ? 'text-left' : 'text-right'}`}>
+                <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.climateLog}</div>
+                <div className="text-[12px] font-medium text-gray-400 mt-0.5">{T.climateLogSub}</div>
+           </div>
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <HealthStyleBarChart 
+                range={range} onRangeChange={setRange} data={tempSeries} 
+                unit="°C" metricName={T.tempChart} color="#10b981" 
+                yAxisTitle={T.tempY}
+              />
+              <HealthStyleBarChart 
+                range={range} onRangeChange={setRange} data={humSeries} 
+                unit="٪" metricName={T.humChart} color="#10b981" 
+                yAxisTitle={T.humY}
+              />
+           </div>
+        </CardShell>
       </div>
     </div>
   );
 }
 
 /* =========================================================
-   2. Soil & Root Data Module (وحدة بيانات التربة والجذور)
+   2. Soil Module (بيئة وصحة التربة)
 ========================================================= */
-export function SoilRootDataPage({ onBack, globalAutoMode }) {
-  const [range, setRange] = useState("M");
-  const [activeAction, setActiveAction] = useState("");
+export function SoilRootDataPage({ onBack, globalAutoMode, activeFarm }) {
+  const [seconds, setSeconds] = useState(0);
 
-  const soilTempSeries = useMemo(() => generateDataForRange(range, { base: 24, amp: 5, noise: 2.5, min: 10, max: 40, seed: 90 }), [range]);
-  const soilMoistSeries = useMemo(() => generateDataForRange(range, { base: 42, amp: 10, noise: 4, min: 10, max: 95, seed: 80 }), [range]);
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const isRtl = !isEn;
 
-  const soilTemp = 24.5;
-  const soilMoist = 42;
+  const T = {
+    title: isEn ? "Soil & Crop Health" : "بيئة وصحة التربة",
+    subtitle: isEn ? "Monitoring soil vitality, moisture, and temperature." : "مراقبة حيوية التربة وتقييم رطوبتها وحرارتها.",
+    soilData: isEn ? "Soil Readings" : "قياسات التربة",
+    liveSub: isEn ? "Live update from sensors" : "تحديث مباشر من الحساسات",
+    soilTemp: isEn ? "Soil Temp" : "حرارة التربة",
+    soilMoist: isEn ? "Soil Moisture" : "رطوبة التربة",
+    soilRecs: isEn ? "Soil Recs" : "توصيات التربة",
+    smartAnalysis: isEn ? "Smart Analysis" : "تحليل ذكي",
+    anomalies: isEn ? "Soil structural anomalies" : "انحرافات وشذوذ في بنية التربة",
+    reason: isEn ? "Reason:" : "السبب:",
+    soilProt: isEn ? "Soil Protection & Irrigation" : "حماية التربة وإدارة الري",
+    autoSub: isEn ? "Based on central automation status" : "يعتمد على حالة الأتمتة المركزية",
+    protActive: isEn ? "Root protection algorithm active. Irrigation only if moisture hits critical low." : "خوارزمية حماية الجذور نشطة، سيتم الري فقط عند نزول الرطوبة عن الحد الحرج.",
+    bioTitle: isEn ? "Soil Biological Log" : "السجل الحيوي للتربة",
+    bioSub: isEn ? "Tracking changes in productivity parameters." : "رصد تغيرات المعايير المؤثرة بالإنتاجية",
+    tempChart: isEn ? "Soil Temp Patterns" : "أنماط حرارة التربة",
+    moistChart: isEn ? "Soil Moisture Patterns" : "أنماط رطوبة التربة المكتشفة",
+    tempY: isEn ? "Soil Temp (°C)" : "حرارة التربة (°C)",
+    moistY: isEn ? "Soil Moisture (%)" : "رطوبة التربة (٪)",
+    lastUpdateAr: "آخر تحديث",
+    lastUpdateEn: "Last Update",
+  };
 
-  const soilStatus = soilMoist > 25 && soilMoist < 55 ? "مثالية (رطوبة متوازنة للجذور)" : "تحتاج انتباه (تذبذب في مستويات الرطوبة)";
-  const soilStatusColor = soilMoist > 25 && soilMoist < 55 ? "text-[#10b981]" : "text-red-500";
+  useEffect(() => {
+    setSeconds(0);
+    const interval = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeFarm]);
+
+  const [range, setRange] = useState("W");
+  const data = getLiveFarmData(activeFarm);
+  const lastUpdateLabel = formatLastUpdated(seconds, T.lastUpdateAr, T.lastUpdateEn);
+
+  const soilTempSeries = useMemo(() => generateDataForRange(range, { 
+    base: 24, amp: 5, noise: 2.5, min: 10, max: 40, seed: 90, farmIndex: activeFarm
+  }), [range, activeFarm]);
+  
+  const soilMoistSeries = useMemo(() => generateDataForRange(range, { 
+    base: 42, amp: 10, noise: 4, min: 10, max: 95, seed: 80, farmIndex: activeFarm
+  }), [range, activeFarm]);
+
+  const soilRecs = useMemo(() => sensorBuildRecommendationsSoil(data.soilTemp, data.soilMoist), [data.soilTemp, data.soilMoist]);
 
   return (
-    <div className="w-full h-full p-5 overflow-auto page-enter" dir="rtl">
-      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-5">
+    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-6">
+
         <SensorTopBar
-          title="بيانات التربة والري"
-          subtitle="تحليل رطوبة وحرارة التربة لضمان استقرار نمو الجذور وكفاءة الامتصاص المائي بالمحمية."
-          icon={<SoilDropIcon />}
+          title={T.title}
+          subtitle={T.subtitle}
+          icon={<PlantSoilIcon />}
           onBack={onBack}
-          onExport={() => {
-            const dateStr = new Date().toLocaleDateString('ar-SA');
-            const titleRow = "تقرير بيانات التربة والري الشامل - نظام وارِف";
-            const periodRow = `تاريخ التصدير: ${dateStr}`;
-            const headers = ["التوقيت", "رطوبة التربة (%)", "حرارة التربة (°C)"].join(",");
-            const rows = soilMoistSeries.map((d, i) => `${d.label},${d.value},${soilTempSeries[i]?.value || ''}`).join("\n");
-            const csv = "\ufeff" + titleRow + "\n" + periodRow + "\n\n" + headers + "\n" + rows;
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", `تقرير_التربة_الشامل_${dateStr}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
         />
 
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
-           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-             </div>
-             <div>
-              <div className="text-[14px] font-bold text-gray-800">التحليل الرقمي للتربة</div>
-              <div className="text-[12px] text-gray-500 mt-0.5">تحليل مستمر لمستويات الرطوبة العميقة لضمان توازن العناصر الغذائية.</div>
-             </div>
-           </div>
-           <div className="text-left bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
-             <div className="text-[11px] font-bold text-gray-500 text-right">توزان بيئة الجذور</div>
-             <div className={`text-[14px] font-black mt-0.5 text-right ${soilStatusColor}`}>{soilStatus}</div>
-           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <CardShell className="p-5">
-            <div className="text-[16px] font-bold text-gray-800">قراءات التربة</div>
-            <div className="text-[13px] text-gray-400 mt-1">تحديث مباشر من العقد الحساسة</div>
-            <div className="mt-5 flex flex-col gap-4">
-              <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                <span className="text-sm font-bold text-gray-500">حرارة التربة</span>
-                <span className="text-xl font-black text-gray-800">{soilTemp}°C</span>
-              </div>
-              <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-xl border border-gray-100">
-                <span className="text-sm font-bold text-gray-500">رطوبة التربة</span>
-                <span className="text-xl font-black text-gray-800">{soilMoist}%</span>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.soilData}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.liveSub}</div>
+            </div>
+            <div className="flex flex-col gap-3">
+               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.soilTemp}</span>
+                  <span className="text-xl font-black text-gray-800">{data.soilTemp.toFixed(1)}°C</span>
+               </div>
+               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
+                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.soilMoist}</span>
+                  <span className="text-xl font-black text-gray-800">{data.soilMoist.toFixed(0)}٪</span>
+               </div>
             </div>
           </CardShell>
 
-          <CardShell className="p-5">
-            <div className="text-[16px] font-bold text-gray-800 flex items-center gap-2">أحدث التوصيات الذكية <span className="bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded-full border border-green-100">ذكاء اصطناعي</span></div>
-            <div className="text-[13px] text-gray-400 mt-1">تنبيهات استباقية بناءً على حالة التربة</div>
-            <ul className="mt-5 text-[14px] text-gray-700 list-disc pr-5 flex flex-col gap-3 font-medium leading-relaxed">
-              {sensorBuildRecommendationsSoil(soilTemp, soilMoist).slice(0, 3).map((r, i) => (
-                <li key={i}>{r}</li>
-              ))}
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className={`text-lg font-bold text-gray-800 tracking-tight leading-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+                {T.soilRecs} 
+                <span className="text-[8px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg border border-emerald-100/50 font-black">{T.smartAnalysis}</span>
+              </div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.anomalies}</div>
+            </div>
+            <ul className="flex flex-col gap-4">
+               {soilRecs.slice(0, 2).map((rec, i) => (
+                  <li key={i} className={`flex gap-3 group/rec ${isEn ? 'flex-row-reverse text-left' : 'text-right'}`}>
+                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0 shadow-sm" />
+                     <div className="flex flex-col gap-1">
+                        <div className="text-[14px] font-bold text-gray-800 leading-tight group-hover/rec:text-amber-700 transition-colors">{rec.text}</div>
+                        <div className={`text-[11px] font-medium text-gray-400 leading-relaxed ${isEn ? 'border-l-2 pl-2' : 'border-r-2 pr-2'} border-amber-500/20`}>
+                           <span className="text-amber-600 mx-1">{T.reason}</span>
+                           {rec.reasoning}
+                        </div>
+                     </div>
+                  </li>
+               ))}
             </ul>
           </CardShell>
 
-          <CardShell className="p-5 text-right">
-             <div className="text-[16px] font-bold text-gray-800">إدارة الري</div>
-             <div className="text-[13px] text-gray-400 mt-1 mb-4">يعتمد على حالة الأتمتة المركزية</div>
-             {globalAutoMode ? (
-               <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center shadow-inner h-full flex items-center justify-center">
-                 <div className="text-green-700 text-[13px] font-black">خوارزمية حماية الجذور نشطة. سيتم الري فقط عند الحاجة القصوى.</div>
-               </div>
-             ) : (
-               <div className="mt-4 flex flex-col gap-3">
-                <SensorPrimaryButton active={activeAction === "irrigate_now"} onClick={() => setActiveAction("irrigate_now")}>بدء ري طوارئ</SensorPrimaryButton>
-                <SensorPrimaryButton active={activeAction === "schedule"} onClick={() => setActiveAction("schedule")}>تعديل الجدولة اليدوية</SensorPrimaryButton>
-               </div>
-             )}
+          <CardShell className="p-5 flex flex-col gap-4">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.soilProt}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.autoSub}</div>
+            </div>
+            <div className="bg-emerald-50/40 rounded-2xl p-4 text-center border border-emerald-100/30 flex items-center justify-center flex-1">
+                <div className="text-emerald-800 font-black text-[12px] leading-relaxed">{T.protActive}</div>
+            </div>
           </CardShell>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pb-12">
-           <HealthStyleBarChart 
-              range={range}
-              onRangeChange={setRange}
-              data={soilMoistSeries}
-              unit="%"
-              metricName="رطوبة التربة"
-              xAxisTitle="الوقت"
-              yAxisTitle="النسبة %"
-           />
-           <HealthStyleBarChart 
-              range={range}
-              onRangeChange={setRange}
-              data={soilTempSeries}
-              unit="°C"
-              metricName="حرارة التربة"
-              xAxisTitle="الوقت"
-              yAxisTitle="الدرجة °C"
-           />
-        </div>
+        <CardShell className="p-6">
+           <div className={`mb-2 ${isEn ? 'text-left' : 'text-right'}`}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.bioTitle}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-1">{T.bioSub}</div>
+           </div>
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <HealthStyleBarChart 
+                range={range} onRangeChange={setRange} data={soilTempSeries} 
+                unit="°C" metricName={T.tempChart} color="#10b981" 
+                yAxisTitle={T.tempY}
+              />
+              <HealthStyleBarChart 
+                range={range} onRangeChange={setRange} data={soilMoistSeries} 
+                unit="٪" metricName={T.moistChart} color="#10b981" 
+                yAxisTitle={T.moistY}
+              />
+           </div>
+        </CardShell>
       </div>
     </div>
   );

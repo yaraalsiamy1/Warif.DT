@@ -4,8 +4,7 @@ function CardShell({ children, className = "", onClick }) {
   return (
     <section
       onClick={onClick}
-      className={`bg-white/90 backdrop-blur-sm rounded-2xl border border-gray-100/80 card-hover flex flex-col ${className}`}
-      style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}
+      className={`bg-white/90 backdrop-blur-md rounded-[24px] border border-gray-100/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-500 flex flex-col overflow-hidden ${className}`}
     >
       {children}
     </section>
@@ -43,8 +42,8 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel, icon }) {
           </div>
         )}
         <div className="flex flex-col">
-          <div className="text-xl font-bold text-gray-800">{title}</div>
-          {subtitle && <div className="text-[13px] text-gray-400 mt-1 font-medium">{subtitle}</div>}
+          <div className="text-lg font-bold text-gray-800 tracking-tight">{title}</div>
+          {subtitle && <div className="text-[12px] text-gray-400 mt-0.5 font-medium leading-tight">{subtitle}</div>}
         </div>
       </div>
       {detailsLabel && (
@@ -137,12 +136,12 @@ function SensorTopBar({ title, subtitle, icon, onBack, onExport }) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center text-[#2E7D32]">
           {icon}
         </div>
         <div className="text-right">
-          <div className="text-xl font-bold text-gray-800">{title}</div>
-          <div className="text-sm text-gray-500">{subtitle}</div>
+          <div className="text-xl font-black text-gray-800 tracking-tight leading-tight">{title}</div>
+          <div className="text-[12px] text-gray-400 font-medium mt-1">{subtitle}</div>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -224,8 +223,8 @@ function Account_IconButton({ children, title, onClick, danger }) {
 
 function Account_ModalShell({ children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="relative w-full max-w-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
+      <div className="relative w-max max-w-[95vw]" onClick={e => e.stopPropagation()}>
         <button type="button" onClick={onClose} className="absolute top-3 left-3 p-2 rounded-full bg-white border border-gray-200 shadow-sm text-gray-500 hover:text-gray-700">×</button>
         {children}
       </div>
@@ -265,6 +264,66 @@ function Account_SensorIcon() {
   );
 }
 
+// --- SHARED PROFESSIONAL ICONS ---
+
+function PlantSoilIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20c0-3 3-4 8-4s8 1 8 4" />
+      <path d="M12 16V8" />
+      <path d="M12 8c-2-2-5-2-5 0 0 3 3 4 5 4" />
+      <path d="M12 8c2-2 5-2 5 0 0 3-3 4-5 4" />
+    </svg>
+  );
+}
+
+function WaterValveIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12h16" />
+      <path d="M12 12V8" />
+      <circle cx="12" cy="6" r="3" />
+      <path d="M12 12s-2 2-2 5 2 5 2 5 2-2 2-5-2-5-2-5Z" />
+    </svg>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="6" x2="16" y2="6" />
+      <line x1="3" y1="12" x2="16" y2="12" />
+      <line x1="3" y1="18" x2="16" y2="18" />
+      <line x1="21" y1="6" x2="21.01" y2="6" />
+      <line x1="21" y1="12" x2="21.01" y2="12" />
+      <line x1="21" y1="18" x2="21.01" y2="18" />
+    </svg>
+  );
+}
+
+function WindIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.7 7.7A2.5 2.5 0 1 1 20 12H5" />
+      <path d="M9.601 3.599A2.5 2.5 0 1 0 8 8h12" />
+      <path d="M11.3 20.3A2.5 2.5 0 1 1 9 16h12" />
+    </svg>
+  );
+}
+
+function IrrigationSmartIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+      <path d="m5 15 2-2" />
+      <path d="m19 15-2-2" />
+      <path d="M12 12v4" />
+      <path d="m9 13 1 1" />
+      <path d="m15 13-1 1" />
+    </svg>
+  );
+}
+
 export {
   CardShell,
   CardTopRow,
@@ -281,5 +340,10 @@ export {
   Account_PencilIcon,
   Account_TrashIcon,
   Account_PlusIcon,
-  Account_SensorIcon
+  Account_SensorIcon,
+  PlantSoilIcon,
+  WaterValveIcon,
+  ListIcon,
+  WindIcon,
+  IrrigationSmartIcon
 };

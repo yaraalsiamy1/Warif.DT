@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { CardShell } from './dashboardShared';
+import { CardShell, Account_ModalShell } from './dashboardShared';
 
 export function CameraCard() {
   const [isActive, setIsActive] = useState(false);
@@ -157,28 +157,43 @@ export function CameraCard() {
             className="w-11 h-11 rounded-2xl transition-all flex items-center justify-center shadow-sm bg-gray-100 text-gray-500 hover:bg-green-100 hover:text-green-700 hover:-translate-y-0.5" title="ملء الشاشة">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
           </button>
-          <button onClick={() => setShowSettings(!showSettings)} className={`w-11 h-11 rounded-2xl transition-all flex items-center justify-center shadow-sm hover:-translate-y-0.5 ${showSettings ? 'bg-green-100 text-green-700 ring-2 ring-green-500/30' : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-600'}`}>
+          <button onClick={() => setShowSettings(!showSettings)} className={`w-11 h-11 rounded-2xl transition-all flex items-center justify-center shadow-sm hover:-translate-y-0.5 ${showSettings ? 'bg-green-100 text-[#2E7D32] ring-2 ring-green-500/30' : 'bg-gray-100 text-gray-400 hover:bg-green-50 hover:text-[#2E7D32]'}`}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
           </button>
-          <button onClick={toggleCamera} className={`px-6 py-2.5 rounded-2xl text-[15px] font-bold transition-all duration-300 flex items-center gap-2 ring-1 ring-transparent hover:ring-opacity-50 hover:-translate-y-0.5 ${isActive ? 'bg-[#ef4444] text-white shadow-lg shadow-red-200/50 hover:bg-[#dc2626]' : 'bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white shadow-lg shadow-green-500/30'}`}>
-            {isActive ? 'إيقاف البث' : 'بدء البث'}
+          <button onClick={toggleCamera} className={`px-6 py-2.5 rounded-2xl text-[15px] font-bold transition-all duration-300 flex items-center gap-2 ring-1 ring-transparent hover:ring-opacity-50 hover:-translate-y-0.5 ${isActive ? 'bg-[#ef4444] text-white shadow-lg shadow-red-200/50 hover:bg-[#dc2626]' : 'bg-[#2E7D32] text-white shadow-lg shadow-green-500/30'}`}>
+            {isActive ? 'إيقاف البث' : 'بدء البث المباشر'}
           </button>
         </div>
       </div>
 
-      {/* Settings Overlay */}
+      {/* Unified Camera Settings Modal */}
       {showSettings && (
-        <div className="absolute inset-x-5 top-[85px] z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-white/90 backdrop-blur-xl rounded-[24px] shadow-2xl border border-white/50 p-5 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-gray-600 text-sm font-bold">إغلاق</button>
-              <div className="text-sm font-black text-gray-800 font-sans">إعدادات المصدر</div>
+        <Account_ModalShell onClose={() => setShowSettings(false)}>
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl animate-modal-in flex flex-col w-[400px] max-w-[92vw]" dir="rtl" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-emerald-600 p-5 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                </div>
+                <div>
+                   <h2 className="text-lg font-bold">إعدادات مصدر الكاميرا</h2>
+                   <p className="text-emerald-100 text-[11px] opacity-90 font-bold">ضبط رابط البث وبيانات الأمان</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
 
-            <div className="space-y-4 animate-in fade-in zoom-in-95 duration-300">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-400 text-right uppercase tracking-wider mb-2">رابط الكاميرا (IP Address)</label>
-                <div className="relative">
+            <div className="p-4 overflow-auto custom-scrollbar flex flex-col gap-4">
+              {/* Camera URL Input */}
+              <div className="animate-fade-in-up">
+                <label className="block text-[12px] font-black text-gray-500 text-right uppercase tracking-[0.1em] mb-2.5">رابط البث (Stream URL / IP)</label>
+                <div className="relative group">
                   <input
                     type="text"
                     value={remoteUrl}
@@ -186,82 +201,92 @@ export function CameraCard() {
                       setRemoteUrl(e.target.value);
                       setHasError(false);
                     }}
-                    placeholder="http://192.168.1.15:4747/video"
-                    className="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-gray-50/50 border-2 border-transparent focus:border-green-500/20 focus:bg-white text-sm font-mono dir-ltr transition-all shadow-inner outline-none"
+                    placeholder="http://192.168.1.XX:4747/video"
+                    className="w-full pl-4 pr-12 py-3 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-emerald-500/20 focus:bg-white text-sm font-mono dir-ltr transition-all shadow-inner outline-none"
                   />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-emerald-500 transition-colors">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
                   </div>
                 </div>
 
-                {/* DroidCam Quick Action */}
-                <div className="mt-2 flex justify-end">
+                {/* DroidCam Shortcut */}
+                <div className="mt-3 flex justify-end">
                   <button
                     onClick={applyDroidCamPreset}
-                    className="flex items-center gap-1.5 text-[10px] font-bold text-[#16a34a] bg-green-50 px-2.5 py-1 rounded-lg hover:bg-green-100 transition-colors"
+                    className="flex items-center gap-2 text-[12px] font-black text-emerald-700 bg-emerald-50 px-3.5 py-1.5 rounded-xl hover:bg-emerald-100 transition-all active:scale-95 border border-emerald-100/50 shadow-sm"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                    ضبط تلقائي لتطبيق DroidCam
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                    ضبط تلقائي لـ DroidCam (آيباد)
                   </button>
                 </div>
               </div>
 
-              {/* Advanced Settings Toggle */}
-              <div className="border-t border-gray-100 pt-3">
+              {/* Advanced Security Section */}
+              <div className="border-t border-gray-50 pt-5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
+                  className="flex items-center gap-2 text-[13px] font-black text-gray-400 hover:text-emerald-600 transition-colors group"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${showAdvanced ? 'rotate-90' : ''}`}><polyline points="9 18 15 12 9 6" /></svg>
-                  إعدادات أمان الكاميرا (متقدم)
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${showAdvanced ? 'rotate-90 text-emerald-600' : ''}`}><polyline points="9 18 15 12 9 6" /></svg>
+                  إعدادات الوصول والأمان (اختياري)
                 </button>
 
                 {showAdvanced && (
-                  <div className="grid grid-cols-2 gap-3 mt-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="grid grid-cols-2 gap-4 mt-5 animate-scale-in">
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-400 mb-2 text-right">كلمة المرور</label>
+                      <label className="block text-[12px] font-black text-gray-400 mb-2 text-right uppercase">كلمة المرور</label>
                       <input
                         type="password"
                         value={remotePass}
                         onChange={(e) => setRemotePass(e.target.value)}
-                        placeholder="اختياري"
-                        className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 border-none text-sm focus:bg-white transition-all shadow-inner outline-none"
+                        placeholder="••••••••"
+                        className="w-full px-5 py-2.5 rounded-2xl bg-gray-50 border-none text-sm focus:bg-white transition-all shadow-inner outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-400 mb-2 text-right">اسم المستخدم</label>
+                      <label className="block text-[12px] font-black text-gray-400 mb-2 text-right uppercase">اسم المستخدم</label>
                       <input
                         type="text"
                         value={remoteUser}
                         onChange={(e) => setRemoteUser(e.target.value)}
-                        placeholder="اختياري"
-                        className="w-full px-4 py-3 rounded-2xl bg-gray-50/50 border-none text-sm focus:bg-white transition-all shadow-inner outline-none text-right"
+                        placeholder="admin"
+                        className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 border-none text-sm focus:bg-white transition-all shadow-inner outline-none text-right"
                       />
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* App Help Guide */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                <div className="flex items-center gap-2 mb-3 justify-end">
-                  <span className="text-xs font-bold text-slate-700">دليل ربط DroidCam</span>
-                  <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 text-[10px] font-bold">؟</div>
+              {/* Quick Help Guide */}
+              <div className="bg-emerald-50/50 rounded-3xl p-4 border border-emerald-100/50 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+                <div className="flex items-center gap-2 mb-4 justify-end">
+                  <span className="text-[12px] font-black text-emerald-800 uppercase tracking-tight">الدليل السريع للإعداد</span>
+                  <div className="w-6 h-6 rounded-lg bg-emerald-200/50 flex items-center justify-center text-emerald-700 text-xs font-black">؟</div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-white p-2 rounded-xl text-center border border-slate-100">
-                    <div className="text-[10px] font-bold text-gray-400 mb-1">الخطوة 2</div>
-                    <div className="text-[10px] text-gray-700 leading-tight">اضغطي ضبط تلقائي، ثم ابدأي البث</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100/30 shadow-sm">
+                    <div className="text-[11px] font-black text-emerald-600/50 mb-1.5 uppercase tracking-widest">المرحلة الثانية</div>
+                    <div className="text-[12px] font-bold text-emerald-900 leading-snug">اضغطي ضبط تلقائي، ثم اضغطي "بدء البث" في الصفحة الرئيسية.</div>
                   </div>
-                  <div className="bg-white p-2 rounded-xl text-center border border-slate-100">
-                    <div className="text-[10px] font-bold text-gray-400 mb-1">الخطوة 1</div>
-                    <div className="text-[10px] text-gray-700 leading-tight">اكتبي الـ WiFi IP في المستطيل أعلاه</div>
+                  <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100/30 shadow-sm">
+                    <div className="text-[11px] font-black text-emerald-600/50 mb-1.5 uppercase tracking-widest">المرحلة الأولى</div>
+                    <div className="text-[12px] font-bold text-emerald-900 leading-snug">تأكدي من تشغيل تطبيق DroidCam وحصلي على عنوان الـ IP.</div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Footer */}
+            <div className="p-5 bg-gray-50 border-t border-gray-50 flex justify-end">
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="px-10 py-3.5 rounded-2xl bg-emerald-600 text-white font-black text-[14px] shadow-lg shadow-emerald-200 active:scale-95 transition-all hover:bg-emerald-700"
+              >
+                حفظ الإعدادات وإغلاق
+              </button>
+            </div>
           </div>
-        </div>
+        </Account_ModalShell>
       )}
 
       {/* Viewport */}

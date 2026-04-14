@@ -1,261 +1,234 @@
-import { useMemo, useState } from 'react';
-import { SensorTopBar, CardShell } from './dashboardShared';
-import { IrrigationActionButton, IrrigationDonut } from './dashboardCharts';
-import { 
-  irrigationDaysInMonth, 
-  generateIrrigationUsageSeries,
-  generateDataForRange
-} from './dashboardUtils';
-import { HealthStyleBarChart } from './dashboardCharts';
+import { useMemo, useState, useEffect } from 'react';
+import { SensorTopBar, CardShell, IrrigationSmartIcon } from './dashboardShared';
+import { IrrigationActionButton, IrrigationDonut, SustainabilityLineChart } from './dashboardCharts';
+import { generateDataForRange, formatLastUpdated, getLiveFarmData } from './dashboardUtils';
 
-export function IrrigationPage({ onBack, globalAutoMode }) {
+export function IrrigationPage({ onBack, globalAutoMode, activeFarm }) {
+  const [seconds, setSeconds] = useState(0);
+
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const isRtl = !isEn;
+
+  const T = {
+    title: isEn ? "Irrigation Management" : "إدارة الري",
+    subtitle: isEn ? "Smart water and energy management via real-time analysis." : "إدارة ذكية لموارد المياه والطاقة عبر التحليل اللحظي لبيئة المحمية.",
+    flowRate: isEn ? "Live Flow Rate" : "معدل التدفق اللحظي",
+    latestRecs: isEn ? "Smart Recommendations" : "أحدث التوصيات الذكية",
+    realTime: isEn ? "Real-time" : "تحليل فوري",
+    dssSub: isEn ? "Justification for current irrigation decisions." : "تبريرات اتخاذ القرار الحالي للري",
+    why: isEn ? "Why?" : "لماذا؟",
+    rec1Title: isEn ? "Irrigation Within Optimal Range" : "معدل الري ضمن النطاق المثالي",
+    rec1Desc: isEn ? "Continue current settings based on stable soil moisture." : "يُنصح بالاستمرار على الإعدادات الحالية بناءً على رطوبة التربة المستقرة.",
+    rec2Title: isEn ? "Avoid Peak-Hour Manual Irrigation" : "تجنب الري اليدوي وقت الذروة",
+    rec2Desc: isEn ? "Reduce evaporation loss under thermal restriction (12–15)." : "تقليل الفاقد بالتبخر وتحت تأثير الحظر الحراري (12–15).",
+    flowManagement: isEn ? "Water Flow Control" : "إدارة تدفق المياه",
+    controlSub: isEn ? "Direct manual control of pumps." : "تحكم يدوي مباشر بالمضخات",
+    autoActive: isEn ? "Automation system schedules irrigation based on actual soil needs." : "نظام الأتمتة يقوم بجدولة الري بناءً على حاجة التربة الفعلية.",
+    startManual: isEn ? "Start Manual Irrigation" : "بدء الري اليدوي الآن",
+    stopAll: isEn ? "Stop All Valves" : "إيقاف كافة المحابس",
+    flushNetwork: isEn ? "Flush Drip Network" : "غسيل شبكة التنقيط",
+    totalDailyWater: isEn ? "Total Daily Water Usage" : "إجمالي الاستهلاك اليومي",
+    totalDailyPower: isEn ? "Daily Power Consumption" : "الاستهلاك اليومي للكهرباء",
+    dailyWaterSub: isEn ? "Cumulative water draw since start of day" : "سحب المياه التراكمي منذ بداية اليوم",
+    dailyPowerSub: isEn ? "Total energy draw since start of day" : "إجمالي سحب الطاقة منذ بداية اليوم",
+    fromYesterday: isEn ? "from yesterday" : "من أمس",
+    liters: isEn ? "Liters" : "لتر",
+    kwh: isEn ? "kWh" : "كيلوواط",
+    trendTitle: isEn ? "Unified Resource Consumption Analysis" : "تحليل استهلاك الموارد الموحد",
+    timeX: isEn ? "Time" : "الوقت",
+    usageY: isEn ? "Resource Usage Rate (%)" : "معدل استهلاك الموارد (٪)",
+    lastUpdateAr: "آخر تحديث",
+    lastUpdateEn: "Last Update",
+  };
+
+  useEffect(() => {
+    setSeconds(0);
+    const interval = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeFarm]);
+
   const [range, setRange] = useState("M");
   const [activeAction, setActiveAction] = useState("");
+  const data = getLiveFarmData(activeFarm);
 
-  // Manual schedule state
-  const [morningEnabled, setMorningEnabled] = useState(true);
-  const [eveningEnabled, setEveningEnabled] = useState(true);
-  const [morningTime, setMorningTime] = useState("06:00");
-  const [eveningTime, setEveningTime] = useState("18:00");
-  const [duration, setDuration] = useState(30);
-  const [frequency, setFrequency] = useState("daily");
-
-  // AI boundary settings state
-  const [moistureMin, setMoistureMin] = useState(35);
-  const [moistureMax, setMoistureMax] = useState(55);
-  const [maxWater, setMaxWater] = useState(100);
-  const [restrictedEnabled, setRestrictedEnabled] = useState(true);
-  const [restrictedFrom, setRestrictedFrom] = useState("12:00");
-  const [restrictedTo, setRestrictedTo] = useState("15:00");
-  const [aiSensitivity, setAiSensitivity] = useState("moderate");
-
-  const series = useMemo(() => {
-    return generateDataForRange(range, { 
+  const dualSeries = useMemo(() => {
+    const raw = generateDataForRange(range, { 
       base: 55, 
       amp: 18, 
       noise: 14, 
       min: 10, 
       max: 95, 
-      seed: 42 + range.length 
+      seed: 42 + range.length,
+      farmIndex: activeFarm
     });
-  }, [range]);
+    return raw.map((pt, i) => ({
+      ...pt,
+      water: pt.value,
+      power: Math.max(10, Math.min(95, pt.value * (0.8 + Math.sin(i)*0.2)))
+    }));
+  }, [range, activeFarm]);
 
-  const current = 62.4;
-  const lastUpdateLabel = "آخر تحديث: قبل 10 دقائق";
+  const currentFlow = data.flowRate;
+  const lastUpdateLabel = formatLastUpdated(seconds, T.lastUpdateAr, T.lastUpdateEn);
 
   return (
-    <div className="w-full h-full p-5 overflow-auto page-enter" dir="rtl">
-      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-4">
-
-        <OpenSensorTopBarSection />
+    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+      <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-5">
 
         <SensorTopBar
-          title="إدارة الموارد المائية"
-          subtitle="إدارة ذكية لموارد المياه والطاقة لضمان استدامة الري بالمحمية عبر تقنيات التوأم الرقمي."
-          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="2" strokeLinecap="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>}
+          title={T.title}
+          subtitle={T.subtitle}
+          icon={<IrrigationSmartIcon />}
           onBack={onBack}
           onExport={() => {
-            const dateStr = new Date().toLocaleDateString('ar-SA');
-            const titleRow = "تقرير الموارد المائية الشامل - نظام وارِف";
-            const periodRow = `تاريخ التصدير: ${dateStr}`;
-            const headers = ["التوقيت", "معدل الاستهلاك (%)"].join(",");
-            const rows = series.map((d) => `${d.label},${d.value}`).join("\n");
-            const csv = "\ufeff" + titleRow + "\n" + periodRow + "\n\n" + headers + "\n" + rows;
+            const dateStr = new Date().toLocaleDateString(isEn ? 'en-US' : 'ar-SA');
+            const csvPrefix = isEn ? "Resource Consumption Report\nPower,Water,Date\n" : "\ufeffتقرير استهلاك الموارد\nطاقة,مياه,التاريخ\n";
+            const csv = csvPrefix + "100,200," + dateStr;
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", `تقرير_الموارد_المائية_${dateStr}.csv`);
-            document.body.appendChild(link);
+            link.setAttribute("download", isEn ? `irrigation_report_${dateStr}.csv` : `تقرير_الري_${dateStr}.csv`);
             link.click();
-            document.body.removeChild(link);
           }}
         />
 
-        {/* Stats row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <CardShell className="p-5">
-            <div className="text-right">
-              <div className="text-[16px] font-bold text-gray-800">معدل الري اليومي</div>
-              <div className="text-[13px] text-gray-400 mt-1">{lastUpdateLabel}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <CardShell className="p-6">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight">{T.flowRate}</div>
+              <div className="text-[12px] text-gray-400 mt-0.5 font-medium">{lastUpdateLabel}</div>
             </div>
-            <div className="mt-4 flex items-center justify-center">
-              <IrrigationDonut value={Math.round(current)} />
+            <div className="mt-8 flex items-center justify-center">
+              <IrrigationDonut value={Math.round(currentFlow)} />
             </div>
-            <div className="mt-2 text-center text-[12px] text-gray-700">
-              معدل الري {Math.round(current)}%
+            <div className="mt-6 text-center text-[11px] font-black text-emerald-700 bg-emerald-50 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-tighter">
+              {isEn ? `Flow Rate ${Math.round(currentFlow)}%` : `معدل التدفق ${Math.round(currentFlow)}٪`}
             </div>
           </CardShell>
 
-          <CardShell className="p-5">
-            <div className="text-right">
-              <div className="text-[16px] font-bold text-gray-800">إدارة تدفق المياه</div>
-              <div className="text-[13px] text-gray-400 mt-1 mb-4">يعتمد على حالة الأتمتة المركزية</div>
+          <CardShell className="p-6">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className={`text-lg font-bold text-gray-800 tracking-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+                {T.latestRecs} 
+                <span className="bg-emerald-50 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full border border-emerald-100">{T.realTime}</span>
+              </div>
+              <div className="text-[12px] text-gray-400 mt-0.5 font-medium">{T.dssSub}</div>
+            </div>
+            <ul className={`mt-6 text-[14px] text-gray-700 flex flex-col gap-4 font-medium leading-relaxed ${isEn ? 'text-left' : 'text-right'}`}>
+              <li className={`flex flex-col gap-1 ${isEn ? 'pl-2 border-l-2' : 'pr-2 border-r-2'} border-emerald-500`}>
+                 <div className="text-gray-800 font-bold text-[14px]">{T.rec1Title}</div>
+                 <div className="text-[11px] text-gray-500 bg-gray-50/80 px-2 py-1 rounded-lg border border-dashed border-gray-200 mt-1">
+                   <span className="font-black text-emerald-700 mx-1">{T.why}</span> {T.rec1Desc}
+                 </div>
+              </li>
+              <li className={`flex flex-col gap-1 ${isEn ? 'pl-2 border-l-2' : 'pr-2 border-r-2'} border-emerald-100`}>
+                 <div className="text-gray-800 font-bold text-[14px]">{T.rec2Title}</div>
+                 <div className="text-[11px] text-gray-500 bg-gray-50/80 px-2 py-1 rounded-lg border border-dashed border-gray-200 mt-1">
+                   <span className="font-black text-emerald-700 mx-1">{T.why}</span> {T.rec2Desc}
+                 </div>
+              </li>
+            </ul>
+          </CardShell>
+
+          <CardShell className="p-6">
+            <div className={isEn ? 'text-left' : 'text-right'}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight">{T.flowManagement}</div>
+              <div className="text-[12px] text-gray-400 mt-0.5 font-medium mb-5">{T.controlSub}</div>
             </div>
 
             {globalAutoMode ? (
-              <div className="bg-green-50/50 border border-green-100 rounded-xl p-4 text-center text-[13px] text-green-700 font-medium h-full flex flex-col items-center justify-center shadow-sm">
-                النظام يتحكم بالري تلقائياً الآن لضمان كفاءة الاستهلاك. تم إيقاف التحكم اليدوي مؤقتاً.
+              <div className="mt-6 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-6 text-center shadow-inner h-full flex items-center justify-center">
+                <div className="text-emerald-800 font-black text-[14px] leading-relaxed">{T.autoActive}</div>
               </div>
             ) : (
-              <div className="mt-4 flex flex-col gap-3">
-                <IrrigationActionButton label="تشغيل مضخة المياه" active={activeAction === "start"} onClick={() => setActiveAction("start")} />
-                <IrrigationActionButton label="إيقاف كامل للمضخات" active={activeAction === "stop"} onClick={() => setActiveAction("stop")} />
+              <div className="mt-6 flex flex-col gap-3">
+                <IrrigationActionButton 
+                  active={activeAction === "irrigate"} 
+                  onClick={() => setActiveAction("irrigate")}
+                  icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>}
+                >
+                  {T.startManual}
+                </IrrigationActionButton>
+                
+                <IrrigationActionButton 
+                  active={activeAction === "stop"} 
+                  onClick={() => setActiveAction("stop")}
+                  icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>}
+                >
+                  {T.stopAll}
+                </IrrigationActionButton>
+                
+                <IrrigationActionButton 
+                  active={activeAction === "flush"} 
+                  onClick={() => setActiveAction("flush")}
+                  icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>}
+                >
+                  {T.flushNetwork}
+                </IrrigationActionButton>
               </div>
             )}
           </CardShell>
-
-          <CardShell className="p-5">
-            <div className="text-right">
-              <div className="text-[16px] font-bold text-gray-800">أحدث التوصيات الذكية</div>
-              <div className="text-[13px] text-gray-400 mt-1">تبريرات اتخاذ القرار الحالي للري</div>
-            </div>
-            <ul className="mt-4 list-disc list-inside text-[13px] text-gray-700 font-medium leading-7 text-right">
-              <li>معدل الري ضمن النطاق المثالي، يُنصح بالاستمرار على الإعدادات الحالية.</li>
-              <li>يرجى تجنب الري اليدوي خلال فترة الحظر الحراري (12–15).</li>
-            </ul>
-          </CardShell>
         </div>
 
-        {/* Detailed Resource Economics Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <CardShell className="p-5 relative overflow-hidden bg-white border border-gray-100/50">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="text-[16px] font-bold text-gray-800">استهلاك المياه (لتر)</div>
-                <div className="text-[12px] text-gray-500 mt-0.5">مقارنة كفاءة التوأم الرقمي بالري التقليدي</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+           <CardShell className="p-6 relative overflow-hidden bg-white border border-gray-100/50">
+            <div className={`flex items-center justify-between mb-4 ${isEn ? 'flex-row-reverse' : ''}`}>
+              <div className={isEn ? 'text-left' : 'text-right'}>
+                <div className="text-lg font-bold text-gray-800 tracking-tight">{T.totalDailyWater}</div>
+                <div className="text-[12px] text-gray-400 font-medium mt-0.5">{T.dailyWaterSub}</div>
               </div>
-              <div className="w-10 h-10 bg-emerald-50 text-[#10b981] rounded-xl flex items-center justify-center border border-emerald-100/30">
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100/30">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
               </div>
             </div>
-            <div className="flex items-end gap-5 mb-3">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-[13px] mb-1.5">
-                  <span className="font-bold text-gray-700">النظام الذكي (الحالي)</span>
-                  <span className="font-black text-[#10b981]">4,500 لتر</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-l from-[#10b981] to-[#6EE7B7] rounded-full w-[45%] shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
-                </div>
-              </div>
+            <div className={`flex items-center justify-between ${isEn ? 'flex-row-reverse' : ''}`}>
+               <div className={`text-4xl font-black text-blue-600 tracking-tight ${isEn ? 'flex flex-row-reverse items-baseline gap-1' : ''}`}>
+                 {data.waterUsage} <span className="text-sm font-bold text-gray-400 tracking-normal">{T.liters}</span>
+               </div>
+               <div className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 shadow-sm">{isEn ? `-12% ${T.fromYesterday}` : `-١٢٪ ${T.fromYesterday}`}</div>
             </div>
-            <div className="flex items-end gap-5">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-[13px] mb-1.5">
-                  <span className="font-bold text-gray-400">الزراعة التقليدية</span>
-                  <span className="font-black text-gray-400">10,000 لتر</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-300 rounded-full w-[100%]" />
-                </div>
-              </div>
+            <div className="mt-6 h-2 w-full bg-blue-50 rounded-full overflow-hidden">
+               <div className="h-full bg-blue-500 rounded-full w-[45%]" />
             </div>
           </CardShell>
 
-          <CardShell className="p-5 relative overflow-hidden bg-white border border-gray-100/50">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="text-[16px] font-bold text-gray-800">استهلاك الكهرباء (كيلوواط)</div>
-                <div className="text-[12px] text-gray-500 mt-0.5">تتبع سحب الطاقة والتحكم في كفاءة المحركات</div>
+          <CardShell className="p-6 relative overflow-hidden bg-white border border-gray-100/50">
+            <div className={`flex items-center justify-between mb-4 ${isEn ? 'flex-row-reverse' : ''}`}>
+              <div className={isEn ? 'text-left' : 'text-right'}>
+                <div className="text-lg font-bold text-gray-800 tracking-tight">{T.totalDailyPower}</div>
+                <div className="text-[12px] text-gray-400 font-medium mt-0.5">{T.dailyPowerSub}</div>
               </div>
               <div className="w-10 h-10 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center border border-yellow-100/30">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
               </div>
             </div>
-            <div className="flex items-end gap-5 mb-3">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-[13px] mb-1.5">
-                  <span className="font-bold text-gray-700">النظام الذكي (الحالي)</span>
-                  <span className="font-black text-yellow-600">320 كيلوواط</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-l from-yellow-500 to-yellow-400 rounded-full w-[60%] shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
-                </div>
-              </div>
+            <div className={`flex items-center justify-between ${isEn ? 'flex-row-reverse' : ''}`}>
+               <div className={`text-4xl font-black text-yellow-600 tracking-tight ${isEn ? 'flex flex-row-reverse items-baseline gap-1' : ''}`}>
+                 {data.powerUsage} <span className="text-sm font-bold text-gray-400 tracking-normal">{T.kwh}</span>
+               </div>
+               <div className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 shadow-sm">{isEn ? `-5% ${T.fromYesterday}` : `-٥٪ ${T.fromYesterday}`}</div>
             </div>
-            <div className="flex items-end gap-5">
-              <div className="flex-1">
-                <div className="flex items-center justify-between text-[13px] mb-1.5">
-                  <span className="font-bold text-gray-400">مستوى الاستهلاك المعتاد</span>
-                  <span className="font-black text-gray-400">550 كيلوواط</span>
-                </div>
-                <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-300 rounded-full w-[100%]" />
-                </div>
-              </div>
+            <div className="mt-6 h-2 w-full bg-yellow-50 rounded-full overflow-hidden">
+               <div className="h-full bg-yellow-500 rounded-full w-[60%]" />
             </div>
           </CardShell>
         </div>
 
-        {/* Unified Manual Settings (Visible only in Manual Mode) */}
-        {!globalAutoMode && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <CardShell className="p-5">
-              <div className="text-right mb-5">
-                <div className="text-[16px] font-semibold text-gray-800">جدولة الري اليدوي</div>
-                <div className="text-[13px] text-gray-500 mt-0.5">تحديد أوقات الري الثابتة عند إيقاف الأتمتة</div>
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-semibold text-gray-800">ري الصباح</div>
-                    <button type="button" onClick={() => setMorningEnabled(v => !v)} className={`w-11 h-6 rounded-full relative transition-all duration-300 ${morningEnabled ? 'bg-[#2E7D32]' : 'bg-gray-300'}`}><span className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow transition-all duration-300 ${morningEnabled ? 'right-1' : 'left-1'}`} /></button>
-                  </div>
-                  {morningEnabled && <input type="time" value={morningTime} onChange={e => setMorningTime(e.target.value)} className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white" />}
-                </div>
-                <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
-                  <div className="text-sm font-semibold text-gray-800 mb-2">مدة الري</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {[15,30,60].map(min => (
-                      <button key={min} type="button" onClick={() => setDuration(min)} className={`px-2.5 py-1 rounded-lg border text-xs ${duration === min ? 'bg-[#E8F5E9] border-[#2E7D32]' : 'bg-white border-gray-100'}`}>{min} دقيقة</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardShell>
-
-            <CardShell className="p-5">
-              <div className="text-right mb-5">
-                <div className="text-[16px] font-bold text-gray-800">القيود التشغيلية اليدوية</div>
-                <div className="text-[13px] text-gray-400 mt-0.5">حدود الرطوبة والوقت التي يلتزم بها النظام كحماية إضافية</div>
-              </div>
-              <div className="flex flex-col gap-4">
-                <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
-                   <div className="text-sm font-semibold text-gray-800 mb-1">نطاق الرطوبة (الحد الأدنى)</div>
-                   <div className="flex gap-2 mt-2">
-                     {[25, 30, 35].map(v => (
-                       <button key={v} onClick={() => setMoistureMin(v)} className={`px-3 py-1 rounded-lg border shadow-sm transition-all duration-300 ${moistureMin === v ? 'bg-[#E8F5E9] border-[#2E7D32] scale-105' : 'bg-white'}`}>{v}%</button>
-                     ))}
-                   </div>
-                </div>
-                <div className="border border-gray-100 rounded-xl p-4 bg-[#fafafa]">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-bold text-gray-800">فترة الحظر الحراري</div>
-                    <button type="button" onClick={() => setRestrictedEnabled(v => !v)} className={`w-11 h-6 rounded-full relative transition-all duration-300 ${restrictedEnabled ? 'bg-[#2E7D32]' : 'bg-gray-300'}`}><span className={`w-4 h-4 rounded-full bg-white absolute top-1 shadow transition-all duration-300 ${restrictedEnabled ? 'right-1' : 'left-1'}`} /></button>
-                  </div>
-                </div>
-              </div>
-            </CardShell>
-          </div>
-        )}
-
-        <div className="pb-12">
-            <HealthStyleBarChart 
-              range={range}
-              onRangeChange={setRange}
-              data={series}
-              unit="%"
-              metricName="معدل استخدام الري"
-              xAxisTitle="الوقت"
-              yAxisTitle="الاستهلاك %"
-            />
+        <div className="animate-fade-in-up delay-4 mb-4">
+           <SustainabilityLineChart 
+             range={range} 
+             onRangeChange={setRange} 
+             data={dualSeries} 
+             metricName={T.trendTitle}
+             xAxisTitle={T.timeX}
+             yAxisTitle={T.usageY}
+           />
         </div>
       </div>
     </div>
   );
-}
-
-function OpenSensorTopBarSection() {
-    return null; // Helper to maintain structure
 }

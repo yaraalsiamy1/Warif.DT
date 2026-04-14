@@ -104,12 +104,28 @@ export const translations = {
 
     // Sidebar
     dashboard: 'الرئيسية',
-    temperature: 'درجة الحرارة',
+    temperature: 'المناخ والتهوية',
     airHumidity: 'رطوبة الهواء',
-    soilMoisture: 'رطوبة التربة',
-    irrigation: 'نظام الري',
-    recommendations: 'التوصيات',
+    soilMoisture: 'بيئة وصحة التربة',
+    irrigation: 'إدارة الري',
+    recommendations: 'التوصيات والقرارات الذكية',
     weather: 'الطقس',
+
+    // New Keys for Guides & Settings
+    userGuide: 'دليل وارِف الشامل',
+    userGuideSub: 'الدليل المتكامل لاستخدام لوحة التحكم، الوظائف، ونصائح الاستدامة الرقمية.',
+    openGuide: 'فتح الدليل الشامل',
+    saveChanges: 'حفظ التغييرات',
+    cancel: 'إلغاء',
+    edit: 'تعديل',
+    deleteSensor: 'هل تريد حذف هذا الحساس بصورة نهائية؟',
+    accountData: 'البيانات الأساسية',
+    sensorsTitle: 'إدارة الحساسات والأجهزة',
+    sensorsSub: 'التحكم في العتاد المتصل بمركز وارِف',
+    addSensor: 'إضافة حساس',
+    sensorName: 'المسمى التعريفي',
+    sensorType: 'نوع الوحدة / الحساس',
+    logoutSystem: 'تسجيل الخروج من وارِف',
   },
 
   en: {
@@ -205,6 +221,8 @@ export const translations = {
     sensorsConnected: 'sensors connected',
     auto: 'Auto',
     manual: 'Manual',
+    smartAutomation: 'Smart Automation',
+    manualControl: 'Manual Control',
 
     // User menu
     myAccount: 'My Account',
@@ -213,12 +231,28 @@ export const translations = {
 
     // Sidebar
     dashboard: 'Dashboard',
-    temperature: 'Temperature',
+    temperature: 'Microclimate & Ventilation',
     airHumidity: 'Air Humidity',
-    soilMoisture: 'Soil Moisture',
-    irrigation: 'Irrigation',
-    recommendations: 'Recommendations',
+    soilMoisture: 'Soil & Crop Health',
+    irrigation: 'Irrigation Management',
+    recommendations: 'Decision Support & Recs',
     weather: 'Weather',
+
+    // New Keys for Guides & Settings
+    userGuide: 'Unified Warif Guide',
+    userGuideSub: 'The comprehensive guide for using the dashboard, functions, and digital sustainability tips.',
+    openGuide: 'Open Comprehensive Guide',
+    saveChanges: 'Save Changes',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    deleteSensor: 'Are you sure you want to delete this sensor?',
+    accountData: 'Basic Account Data',
+    sensorsTitle: 'Sensors & Hardware Management',
+    sensorsSub: 'Control equipment connected to Warif center',
+    addSensor: 'Add Sensor',
+    sensorName: 'Device Label',
+    sensorType: 'Unit / Sensor Type',
+    logoutSystem: 'Sign out from Warif',
   },
 };
 

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { translations } from "../i18n";
 import { Sidebar, DashboardHome, DecisionSupportPage, IrrigationPage, MicroclimatePage, SoilRootDataPage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
-import { WeatherIcon } from "./dashboard/dashboardShared";
+import { WeatherIcon, Account_ModalShell } from "./dashboard/dashboardShared";
 
 /* =========================================================
    WARIF | Dashboard (Scope: Sensors + Irrigation + Recs + Account/Settings)
@@ -113,9 +113,13 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
 
   // Navigation scaffold
   const [page, setPage] = useState("dashboard");
+  const [activeFarm, setActiveFarm] = useState(0); 
   const [globalAutoMode, setGlobalAutoMode] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSensorsPopup, setShowSensorsPopup] = useState(false);
+
+  const farms = ["محمية الخضروات", "محمية الفواكه", "محمية الورقيات"];
+  const currentFarmName = farms[activeFarm];
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -212,7 +216,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
   return (
     <>
       <div
-        className="relative w-full h-full bg-[#F7F7F4] font-['IBM_Plex_Sans_Arabic']"
+        className="relative w-full h-full bg-[#f7f7f4] font-['IBM_Plex_Sans_Arabic']"
         dir={isRtl ? 'rtl' : 'ltr'}
       >
         <div className="w-full h-full flex flex-col">
@@ -222,20 +226,19 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
             {/* Start (Right in RTL): Breadcrumb & Sensors */}
             <div className="flex items-center gap-4">
               <div className="flex flex-col">
-                 <div className="text-[10px] font-bold text-gray-400 mb-0.5 tracking-wide">المحميات المادية / محمية الخضروات /</div>
-                 <div className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2">
-                   {page === "dashboard" ? "الرئيسية (لوحة التحكم)" : page === "microclimate" ? "وحدة المناخ الدقيق" : page === "soil" ? "بيانات التربة" : page === "irrigation" ? "إدارة الري والموارد" : page === "dss" ? "نظام دعم اتخاذ القرار" : "إعدادات النظام"}
+                 <div className="text-[10px] font-bold text-emerald-700/60 mb-0.5 tracking-widest uppercase">المحميات المادية / {currentFarmName} /</div>
+                 <div className="text-[15px] font-black text-gray-800 flex items-center gap-2 tracking-tight">
+                   {page === "dashboard" ? "لوحة التحكم" : page === "microclimate" ? "المناخ والتهوية" : page === "soil" ? "بيئة وصحة التربة" : page === "irrigation" ? "إدارة الري" : page === "dss" ? "التوصيات والقرارات" : "إعدادات النظام"}
                  </div>
               </div>
-              
             </div>
 
             {/* Center: Master AI Switch */}
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gray-50/90 border border-gray-200 rounded-2xl p-1 shadow-sm">
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gray-50/80 border border-gray-200 rounded-2xl p-1 shadow-inner">
               <button
                 onClick={() => setGlobalAutoMode(true)}
-                className={`px-5 py-1.5 text-[13px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl ${globalAutoMode
-                  ? "bg-gradient-to-r from-[#16a34a] to-[#15803d] text-white shadow-md shadow-green-500/20"
+                className={`px-5 py-1.5 text-[11px] font-black transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl uppercase tracking-tighter ${globalAutoMode
+                  ? "bg-gradient-to-r from-[#2E7D32] to-[#1B5E20] text-white shadow-md shadow-green-500/20"
                   : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   }`}
               >
@@ -243,7 +246,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
               </button>
               <button
                 onClick={() => setGlobalAutoMode(false)}
-                className={`px-5 py-1.5 text-[13px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl ${!globalAutoMode
+                className={`px-5 py-1.5 text-[11px] font-black transition-all duration-300 flex items-center justify-center gap-1.5 rounded-xl uppercase tracking-tighter ${!globalAutoMode
                   ? "bg-gray-800 text-white shadow-md shadow-gray-900/20"
                   : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                   }`}
@@ -296,42 +299,42 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
                     <button onClick={() => { go("settings"); setShowUserMenu(false); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50 text-right border-t border-gray-50 font-semibold">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg> {T.settings}
                     </button>
-                    <button
-                      onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> {T.logout}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-
-          {/* ================= Body with Persistent Sidebar ================= */}
-          <main className="flex-1 min-h-0 flex">
-            {/* Sidebar — always visible */}
-            <Sidebar currentPage={page} onGo={go} T={T} weatherData={weatherData} />
-
-            {/* Content Area */}
-            <div className="flex-1 min-h-0 overflow-auto">
-              {page === "dashboard" ? (
-                <DashboardHome onGo={go} onSendAI={sendToAI} globalAutoMode={globalAutoMode} onOpenAssets={() => setShowSensorsPopup(true)} />
-              ) : page === "dss" ? (
-                <DecisionSupportPage onBack={() => go("dashboard")} />
-              ) : page === "irrigation" ? (
-                <IrrigationPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
-              ) : page === "microclimate" ? (
-                <MicroclimatePage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
-              ) : page === "soil" ? (
-                <SoilRootDataPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} />
-              ) : page === "profile" ? (
-                <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
-              ) : page === "settings" ? (
-                <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
-              ) : (
-                <PlaceholderPage page={page} onBack={() => go("dashboard")} />
+                  <button
+                    onClick={() => { localStorage.removeItem('warif_remember'); onLogout(); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 text-right border-t border-gray-50">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg> {T.logout}
+                  </button>
+                </div>
               )}
             </div>
+          </div>
+        </header>
+
+        {/* ================= Body with Persistent Sidebar ================= */}
+        <main className="flex-1 min-h-0 flex">
+          {/* Sidebar — always visible */}
+          <Sidebar currentPage={page} onGo={go} T={T} weatherData={weatherData} activeFarm={activeFarm} setActiveFarm={setActiveFarm} />
+
+          {/* Content Area */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            {page === "dashboard" ? (
+              <DashboardHome onGo={go} onSendAI={sendToAI} globalAutoMode={globalAutoMode} onOpenAssets={() => setShowSensorsPopup(true)} activeFarm={activeFarm} />
+            ) : page === "dss" ? (
+              <DecisionSupportPage onBack={() => go("dashboard")} activeFarm={activeFarm} />
+            ) : page === "irrigation" ? (
+              <IrrigationPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} activeFarm={activeFarm} />
+            ) : page === "microclimate" ? (
+              <MicroclimatePage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} activeFarm={activeFarm} />
+            ) : page === "soil" ? (
+              <SoilRootDataPage onBack={() => go("dashboard")} globalAutoMode={globalAutoMode} activeFarm={activeFarm} />
+            ) : page === "profile" ? (
+              <AccountAndSettingsPages initialPage="profile" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
+            ) : page === "settings" ? (
+              <AccountAndSettingsPages initialPage="settings" onBack={() => go("dashboard")} onLogout={onLogout} onNameUpdate={handleNameUpdate} language={language} onLanguageChange={handleLanguageChange} sensors={connectedSensors} onSensorsChange={handleSensorsChange} />
+            ) : (
+              <PlaceholderPage page={page} onBack={() => go("dashboard")} />
+            )}
+          </div>
           </main>
 
           {/* Chatbot FAB */}
@@ -395,62 +398,82 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
         </div>
       </div>
 
-      {/* ===== Sensors Popup Modal (root level) ===== */}
+      {/* ===== Unified Sensors Popup Modal ===== */}
       {showSensorsPopup && (
-        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-[9999]" dir="rtl" onClick={() => setShowSensorsPopup(false)}>
-          <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-[420px] max-w-[92vw] overflow-hidden animate-scale-in" onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex-1">
-                <div className="text-[16px] font-bold text-gray-800">الحساسات والأجهزة</div>
-                <div className="text-[13px] text-gray-400 mt-0.5">حالة الاتصال والتشغيل الآن</div>
+        <Account_ModalShell onClose={() => setShowSensorsPopup(false)}>
+          <div className="bg-white rounded-3xl overflow-hidden shadow-2xl animate-modal-in max-h-[85vh] flex flex-col w-[400px] max-w-[92vw]" dir="rtl" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="bg-emerald-600 p-6 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="4" width="16" height="16" rx="4" /><circle cx="12" cy="12" r="3" /><path d="M12 7v-3" /></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">الحساسات والأجهزة المتصلة</h2>
+                  <p className="text-emerald-100 text-[12px] opacity-90 font-bold">حالة الاتصال والبيانات اللحظية الحالية</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => { go("settings"); setShowSensorsPopup(false); }}
-                  className="px-3 py-1.5 rounded-xl bg-gray-50 text-[12px] font-bold text-[#16a34a] border border-gray-100 hover:bg-green-50 transition-all flex items-center gap-1.5"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  تعديل
-                </button>
-                <button onClick={() => setShowSensorsPopup(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                </button>
-              </div>
+              <button 
+                onClick={() => setShowSensorsPopup(false)}
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
-            <div className="p-3 flex flex-col gap-2">
+
+            {/* Content Container */}
+            <div className="p-2 flex flex-col gap-2 overflow-auto custom-scrollbar">
               {connectedSensors.map((s, i) => (
-                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl border border-gray-100 bg-[#fafafa] hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${s.status === 'warning' ? 'bg-[#FFF7ED]' : 'bg-[#E8F5E9]'}`}>
+                <div key={i} className="flex items-center justify-between px-5 py-4 rounded-2xl border border-gray-50 bg-[#fafafa]/50 hover:bg-white hover:border-emerald-100 hover:shadow-md transition-all duration-300 group">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${s.status === 'warning' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'}`}>
                       {s.type.includes('مضخة') ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                       ) : s.type.includes('مروحة') || s.type.includes('مكيف') ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                       ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={s.status === 'warning' ? '#ea580c' : '#2E7D32'} strokeWidth="2" strokeLinecap="round">
-                          <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill={s.status === 'warning' ? '#ea580c' : '#2E7D32'} />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                          <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1.5" fill="currentColor" />
                         </svg>
                       )}
                     </div>
-                    <div className="text-right leading-tight">
-                      <div className="text-[14px] font-semibold text-gray-800">{s.name}</div>
-                      <div className="text-[12px] text-gray-400">{s.type}</div>
+                    <div className="text-right">
+                      <div className="text-[15px] font-black text-gray-800">{s.name}</div>
+                      <div className="text-[12px] font-bold text-gray-400 mt-0.5">{s.type}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  
+                  <div className="flex items-center gap-5">
                     <div className="text-left flex flex-col items-end">
-                      <div className="text-[9px] font-bold text-gray-400 mb-0.5 tracking-tight">القراءة اللحظية</div>
+                      <div className="text-[11px] font-black text-gray-400 mb-0.5 tracking-tighter uppercase">Live Value</div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[15px] font-black ${s.status === 'warning' ? 'text-[#ea580c]' : 'text-[#2E7D32]'}`}>{s.value}</span>
-                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-[#ea580c] animate-pulse' : 'bg-[#16a34a]'}`} />
+                        <span className={`text-lg font-black ${s.status === 'warning' ? 'text-orange-600' : 'text-emerald-700'}`}>{s.value}</span>
+                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`} />
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Footer buttons */}
+            <div className="p-4 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
+              <button 
+                onClick={() => { go("settings"); setShowSensorsPopup(false); }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-sm font-black text-gray-700 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm active:scale-95"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                تعديل العتاد
+              </button>
+              <button 
+                onClick={() => setShowSensorsPopup(false)}
+                className="px-8 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-sm shadow-lg shadow-emerald-100 active:scale-95 transition-all hover:bg-emerald-700"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
-        </div>
+        </Account_ModalShell>
       )}
 
     </>

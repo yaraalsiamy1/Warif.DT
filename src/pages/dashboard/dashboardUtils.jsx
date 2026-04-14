@@ -14,8 +14,9 @@ function generateIrrigationUsageSeries({
   min,
   max,
   seed = 7,
+  farmIndex = 0
 }) {
-  let s = seed;
+  let s = seed + (farmIndex * 100);
   const rnd = () => {
     s = (s * 9301 + 49297) % 233280;
     return s / 233280;
@@ -31,267 +32,54 @@ function generateIrrigationUsageSeries({
   return out;
 }
 
-function IrrigationBarChart2D({ data, yLabel, unit }) {
-  const pad = 36;
-  const h = 260;
+// Helper for bilingual labels
+const L = (isEn) => ({
+  usageLow: isEn ? "Low Usage" : "استخدام منخفض",
+  usageMed: isEn ? "Medium Usage" : "استخدام متوسط",
+  usageHigh: isEn ? "High Usage" : "استخدام مرتفع",
+  usageLegend: isEn ? "Colors represent irrigation usage levels." : "الألوان تعبّر عن مستوى استخدام الري.",
+  now: isEn ? "Now" : "الآن",
+  agoSec: (s) => isEn ? `${s} seconds ago` : `منذ ${s} ثانية`,
+  agoMin: (m) => {
+    if (!isEn) {
+      if (m === 1) return "منذ دقيقة";
+      if (m === 2) return "منذ دقيقتين";
+      if (m <= 10) return `منذ ${m} دقائق`;
+      return `منذ ${m} دقيقة`;
+    }
+    return m === 1 ? "1 min ago" : `${m} mins ago`;
+  },
+  daysAr: ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+  daysEn: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  monthsAr: ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"],
+  monthsEn: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+});
 
-  const n = data.length;
-  const w = Math.max(860, pad * 2 + n * 18);
-  const barW = 10;
-  const gap = 8;
+export function formatLastUpdated(seconds, prefixAr = "آخر تحديث", prefixEn = "Last Update") {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const labels = L(isEn);
+  const prefix = isEn ? prefixEn : prefixAr;
 
-  const ys = data.map((d) => d.value);
-  const yMinRaw = Math.min(...ys);
-  const yMaxRaw = Math.max(...ys);
-  const yMin = Math.floor(yMinRaw - 2);
-  const yMax = Math.ceil(yMaxRaw + 2);
-
-  const x = (i) => pad + i * (barW + gap);
-  const y = (val) =>
-    h - pad - ((val - yMin) / (yMax - yMin || 1)) * (h - pad * 2);
-  const barH = (val) => h - pad - y(val);
-
-  const yTicks = 5;
-
-  const colorFor = (v) => {
-    const t = (v - yMin) / (yMax - yMin || 1);
-    const hue = 125 - t * 115;
-    return `hsl(${hue} 55% 50%)`;
-  };
-
-  return (
-    <div className="w-full">
-      {/* الرسم */}
-      <div className="w-full overflow-hidden">
-        <svg width={w} height={h} className="block">
-          <rect x="0" y="0" width={w} height={h} fill="white" />
-
-          {Array.from({ length: yTicks + 1 }).map((_, i) => {
-            const v = yMin + ((yMax - yMin) * i) / yTicks;
-            const yy = y(v);
-            return (
-              <g key={`yg-${i}`}>
-                <line x1={pad} y1={yy} x2={w - pad} y2={yy} stroke="#E5E7EB" />
-                <text
-                  x={pad - 8}
-                  y={yy + 4}
-                  fontSize="10"
-                  fill="#6B7280"
-                  textAnchor="end"
-                >
-                  {v.toFixed(0)}
-                </text>
-              </g>
-            );
-          })}
-
-          <line x1={pad} y1={pad} x2={pad} y2={h - pad} stroke="#D1D5DB" />
-          <line
-            x1={pad}
-            y1={h - pad}
-            x2={w - pad}
-            y2={h - pad}
-            stroke="#D1D5DB"
-          />
-
-          {data.map((d, i) => {
-            const xx = x(i);
-            const yy = y(d.value);
-            const hh = barH(d.value);
-            return (
-              <g key={d.day}>
-                <rect
-                  x={xx}
-                  y={yy}
-                  width={barW}
-                  height={hh}
-                  rx="3"
-                  fill={colorFor(d.value)}
-                  opacity="0.95"
-                />
-                {i % 4 === 0 ? (
-                  <text
-                    x={xx + barW / 2}
-                    y={h - 12}
-                    fontSize="10"
-                    fill="#6B7280"
-                    textAnchor="middle"
-                  >
-                    {d.day}
-                  </text>
-                ) : null}
-              </g>
-            );
-          })}
-
-          <text
-            x={w - pad}
-            y={pad - 10}
-            fontSize="11"
-            fill="#374151"
-            textAnchor="end"
-          >
-            {yLabel} {unit ? `(${unit})` : ""}
-          </text>
-        </svg>
-      </div>
-
-      {/* شرح الألوان */}
-      <div className="mt-3 text-center text-[11px] text-gray-500">
-        الألوان تعبّر عن مستوى استخدام الري.
-      </div>
-
-      {/* Legend بالمنتصف */}
-      <div className="mt-2 w-full flex justify-center" dir="rtl">
-        <div className="flex items-center gap-4 text-[11px] text-gray-600">
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#2E7D32]" />
-            <span>استخدام منخفض</span>
-          </div>
-
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#FBC02D]" />
-            <span>استخدام متوسط</span>
-          </div>
-
-          <div className="flex items-center gap-1 whitespace-nowrap">
-            <span className="w-3 h-3 rounded-sm bg-[#EF6C00]" />
-            <span>استخدام مرتفع</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (seconds < 10) return `${prefix}: ${labels.now}`;
+  if (seconds < 60) return `${prefix}: ${labels.agoSec(seconds)}`;
+  const mins = Math.floor(seconds / 60);
+  return `${prefix}: ${labels.agoMin(mins)}`;
 }
 
+export function generateDataForRange(range, { base, amp, noise, min, max, seed, farmIndex = 0 }) {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const labels = L(isEn);
 
-/* =========================================================
-   Sensor Detail Pages (Temperature / Air Humidity / Soil)
-   (same logic you provided, only integrated to dashboard routing)
-========================================================= */
-
-function sensorClamp(n, a, b) {
-  return Math.max(a, Math.min(b, n));
-}
-
-function sensorDaysInMonth(year, monthIndex0) {
-  return new Date(year, monthIndex0 + 1, 0).getDate();
-}
-
-function sensorMakeMonthOptionsAr() {
-  return [
-    "يناير",
-    "فبراير",
-    "مارس",
-    "أبريل",
-    "مايو",
-    "يونيو",
-    "يوليو",
-    "أغسطس",
-    "سبتمبر",
-    "أكتوبر",
-    "نوفمبر",
-    "ديسمبر",
-  ];
-}
-
-// Helper: dynamic update text based on selected month
-function sensorGetUpdateText(selectedMonth) {
-  const currentMonth = new Date().getMonth(); // 0-indexed, April = 3
-  const currentYear = new Date().getFullYear();
-  const months = sensorMakeMonthOptionsAr();
-  if (selectedMonth === currentMonth) return 'آخر تحديث: قبل 5 دقائق';
-  if (selectedMonth > currentMonth) return `بيانات ${months[selectedMonth]} غير متوفرة بعد`;
-  const lastDay = sensorDaysInMonth(currentYear, selectedMonth);
-  return `آخر تحديث: ${lastDay} ${months[selectedMonth]}`;
-}
-
-function sensorIsFutureMonth(selectedMonth) {
-  return selectedMonth > new Date().getMonth();
-}
-
-function sensorGenerateLineSeries({
-  days,
-  base,
-  amp,
-  noise,
-  min,
-  max,
-  seed = 7,
-}) {
-  let s = seed;
-  const rnd = () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-
-  const out = [];
-  for (let d = 1; d <= days; d++) {
-    const wave = Math.sin((d / 7) * Math.PI * 0.9) * amp;
-    const jitter = (rnd() - 0.5) * noise;
-    const v = sensorClamp(base + wave + jitter, min, max);
-    out.push({ day: d, value: Number(v.toFixed(1)) });
-  }
-  return out;
-}
-
-export function sensorBuildRecommendationsTemperature(current) {
-  const rec = [];
-  if (current >= 35) {
-    rec.push(
-      "درجة الحرارة مرتفعة: يوصى بتفعيل المكيفات وتقليل التعرض المباشر للشمس داخل المحمية."
-    );
-    rec.push("راقب الرطوبة بالتزامن لتفادي الإجهاد الحراري للنبات.");
-  } else if (current <= 15) {
-    rec.push(
-      "درجة الحرارة منخفضة: يوصى بتقليل التهوية وتفعيل التدفئة إن وجدت."
-    );
-    rec.push("تأكد من ضبط التهوية لتفادي التكاثف وتسرب الرطوبة الزائدة.");
-  } else {
-    rec.push("الحرارة ضمن النطاق المقبول: استمر بالمراقبة الدورية.");
-  }
-  return rec;
-}
-
-export function sensorBuildRecommendationsHumidity(current) {
-  const rec = [];
-  if (current >= 80) {
-    rec.push("الرطوبة مرتفعة: يوصى بزيادة التهوية وتقليل الرش/الري الضبابي.");
-    rec.push("افحص منافذ التهوية وتأكد من جفاف الأسطح المحيطة.");
-  } else if (current <= 35) {
-    rec.push("الرطوبة منخفضة: يوصى بضبط نظام الترطيب أو إعادة جدولة الري.");
-    rec.push("احرص على عدم تعريض الأوراق للجفاف لفترات طويلة.");
-  } else {
-    rec.push("الرطوبة ضمن النطاق المناسب: استمر على إعدادات التشغيل الحالية.");
-  }
-  return rec;
-}
-
-export function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
-  const rec = [];
-  if (soilMoist <= 25) {
-    rec.push(
-      "رطوبة التربة منخفضة: يوصى بزيادة الري تدريجيًا ومراقبة الاستجابة خلال 24 ساعة."
-    );
-  } else if (soilMoist >= 60) {
-    rec.push(
-      "رطوبة التربة مرتفعة: قلل الري وتأكد من التصريف لتفادي تعفن الجذور."
-    );
-  } else {
-    rec.push("رطوبة التربة جيدة: حافظ على الجدول الحالي مع مراجعة أسبوعية.");
-  }
-  return rec;
-}
-
-function generateDataForRange(range, { base, amp, noise, min, max, seed }) {
-  let s = seed || 7;
+  let s = (seed || 7) + (farmIndex * 100);
   const rnd = () => {
     s = (s * 9301 + 49297) % 233280;
     return s / 233280;
   };
 
   const now = new Date();
-  const currentMonth = now.getMonth(); // 0-indexed
+  const currentMonth = now.getMonth(); 
   const currentDay = now.getDate();
   const currentHour = now.getHours();
 
@@ -309,14 +97,11 @@ function generateDataForRange(range, { base, amp, noise, min, max, seed }) {
   const points = getPoints();
   const out = [];
   for (let i = 0; i < points; i++) {
-    // Logic to hide future data
     let isFuture = false;
     if (range === 'Y' && i > currentMonth) isFuture = true;
     if (range === 'M' && i + 1 > currentDay) isFuture = true;
     if (range === 'D' && i > currentHour) isFuture = true;
-    // For 'W' and '6M', we'll simplify: if i > some threshold, it's future. 
-    // In a real app we'd check actual dates.
-    if (range === 'W' && i > 3) isFuture = false; // Just showing a few days for week demo
+    if (range === 'W' && i > 3) isFuture = false; 
 
     if (isFuture) continue;
 
@@ -326,23 +111,107 @@ function generateDataForRange(range, { base, amp, noise, min, max, seed }) {
     
     let label = '';
     if (range === 'D') label = `${i}:00`;
-    else if (range === 'W') label = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"][i % 7];
+    else if (range === 'W') label = isEn ? labels.daysEn[i % 7] : labels.daysAr[i % 7];
     else if (range === 'M') label = `${i + 1}`;
-    else if (range === '6M' || range === 'Y') label = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"][i % 12];
+    else if (range === '6M' || range === 'Y') label = isEn ? labels.monthsEn[i % 12] : labels.monthsAr[i % 12];
 
     out.push({ label, value: Number(v.toFixed(1)) });
   }
   return out;
 }
 
+export function sensorBuildRecommendationsTemperature(current) {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const rec = [];
+  
+  if (current >= 35) {
+    rec.push({
+      text: isEn ? "High temperature: cooling activation recommended." : "درجة الحرارة مرتفعة: يوصى بتفعيل المكيفات وتقليل التعرض المباشر للشمس.",
+      reasoning: isEn ? "Temp exceeded 35°C, which may cause plant stomata to close and halt growth." : "تجاوزت الحرارة حاجز 35 درجة مئوية، وهو ما قد يؤدي لإغلاق ثغور النبات وتوقف النمو."
+    });
+    rec.push({
+      text: isEn ? "Monitor humidity to avoid heat stress." : "راقب الرطوبة بالتزامن لتفادي الإجهاد الحراري.",
+      reasoning: isEn ? "High heat with low humidity increases excessive leaf transpiration." : "ارتفاع الحرارة مع انخفاض الرطوبة يزيد من معدل النتح الجائر للأوراق."
+    });
+  } else if (current <= 15) {
+    rec.push({
+      text: isEn ? "Low temperature: reduce ventilation and activate heating." : "درجة الحرارة منخفضة: يوصى بتقلي التهوية وتفعيل التدفئة.",
+      reasoning: isEn ? "Temp below 15°C slows metabolic processes and may cause cold shock." : "الحرارة تحت 15 درجة تبطئ العمليات الأيضية للنبات وقد تسبب صدمة برد."
+    });
+  } else {
+    rec.push({
+      text: isEn ? "Normal temperature range: continue periodic monitoring." : "الحرارة ضمن النطاق المقبول: استمر بالمراقبة الدورية.",
+      reasoning: isEn ? "Current range (18-28°C) is ideal for optimal photosynthesis." : "النطاق الحالي (18-28م) هو الأنسب لعملية البناء الضوئي المثالية."
+    });
+  }
+  return rec;
+}
+
+export function sensorBuildRecommendationsHumidity(current) {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const rec = [];
+  
+  if (current >= 80) {
+    rec.push({
+      text: isEn ? "High humidity: increase ventilation and reduce misting." : "الرطوبة مرتفعة: يوصى بزيادة التهوية وتقليل الرش الضبابي.",
+      reasoning: isEn ? "Excessive humidity (+80%) prevents natural transpiration and increases mold risks." : "الرطوبة الزائدة (+80%) تمنع النتح الطبيعي وتزيد من مخاطر الإصابة بالأعفان."
+    });
+  } else if (current <= 35) {
+    rec.push({
+      text: isEn ? "Low humidity: adjust humidification system." : "الرطوبة منخفضة: يوصى بضبط نظام الترطيب.",
+      reasoning: isEn ? "Humidity below 35% causes leaf edge drying and stunting." : "انخفاض الرطوبة تحت 35% يسبب جفاف حواف الأوراق وتقزم الثمار."
+    });
+  } else {
+    rec.push({
+      text: isEn ? "Optimal humidity: maintain current settings." : "الرطوبة ضمن النطاق المناسب: استمر على الإعدادات الحالية.",
+      reasoning: isEn ? "Current level (50-65%) maintains plant cell pressure balance." : "مستوى الرطوبة الحالي (50-65%) يحافظ على توازن ضغط الخلايا النباتية."
+    });
+  }
+  return rec;
+}
+
+export function sensorBuildRecommendationsSoil(soilTemp, soilMoist) {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+  const rec = [];
+  
+  if (soilMoist <= 25) {
+    rec.push({
+      text: isEn ? "Low soil moisture: increase irrigation gradually." : "رطوبة التربة منخفضة: يوصى بزيادة الري تدريجيًا.",
+      reasoning: isEn ? "Moisture near wilting point threatens root life and stunts nutrient absorption." : "اقتراب الرطوبة من نقطة الذبول الدائم يهدد حياة الجذور ويعيق امتصاص العناصر."
+    });
+  } else if (soilMoist >= 60) {
+    rec.push({
+      text: isEn ? "High soil moisture: reduce irrigation and ensure drainage." : "رطوبة التربة مرتفعة: قلل الري وتأكد من التصريف.",
+      reasoning: isEn ? "Waterlogging expels oxygen, causing root suffocation and rot." : "تشبع التربة بالماء يطرد الأكسجين ويسبب اختناق الجذور وتعفنها."
+    });
+  }
+
+  if (rec.length === 0) {
+    rec.push({
+      text: isEn ? "Soil environment is balanced and ideal for growth." : "بيئة التربة متوازنة ومثالية للنمو.",
+      reasoning: isEn ? "All vital indicators (moisture/temp) are within recommended agricultural ranges." : "كافة المؤشرات الحيوية (رطوبة وحرارة التربة) ضمن النطاقات الزراعية الموصى بها."
+    });
+  }
+  return rec;
+}
+
+export function getLiveFarmData(activeFarm) {
+  return {
+    temp: 28.4 + (activeFarm * 2),
+    hum: 56 + (activeFarm * 3),
+    soilTemp: 24.5 + (activeFarm * 1.5),
+    soilMoist: 42 + (activeFarm * 2),
+    waterUsage: 5000 + (activeFarm * 500),
+    powerUsage: 360 + (activeFarm * 40),
+    flowRate: 60 + (activeFarm * 7)
+  };
+}
+
 export {
   irrigationClamp,
   irrigationDaysInMonth,
-  generateIrrigationUsageSeries,
-  sensorDaysInMonth,
-  sensorGenerateLineSeries,
-  sensorMakeMonthOptionsAr,
-  sensorGetUpdateText,
-  sensorIsFutureMonth,
-  generateDataForRange
+  generateIrrigationUsageSeries
 };

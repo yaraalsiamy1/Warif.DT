@@ -1,6 +1,27 @@
-import { CardShell, CardTopRow, TempSunIcon, AirHumidityIcon, SoilDropIcon, DropBadgeIcon } from './dashboardShared';
-import { Donut } from './dashboardCharts';
+import { useState, useEffect } from 'react';
+import { 
+  CardShell, 
+  CardTopRow, 
+  TempSunIcon, 
+  AirHumidityIcon, 
+  SoilDropIcon, 
+  DropBadgeIcon, 
+  PlantSoilIcon, 
+  WaterValveIcon, 
+  ListIcon,
+  WindIcon,
+  IrrigationSmartIcon
+} from './dashboardShared';
+import { useMemo } from 'react';
+import { 
+  Donut
+} from './dashboardCharts';
 import { CameraCard } from './CameraCard';
+import { 
+  formatLastUpdated, 
+  getLiveFarmData, 
+  generateDataForRange 
+} from './dashboardUtils';
 
 // Liquid Wave Animation Styles
 const waveStyles = `
@@ -17,26 +38,66 @@ const waveStyles = `
   }
 `;
 
-export function DashboardHome({ onGo, onSendAI, globalAutoMode, onOpenAssets }) {
+export function DashboardHome({ onGo, onSendAI, globalAutoMode, onOpenAssets, activeFarm }) {
+  const [seconds, setSeconds] = useState(0);
+
+  const [resourceRange, setResourceRange] = useState("D");
+
+  useEffect(() => {
+    setSeconds(0);
+    const interval = setInterval(() => {
+      setSeconds(s => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeFarm]);
+
+  const resourceData = useMemo(() => {
+    const raw = generateDataForRange(resourceRange, { 
+      base: 45, amp: 15, noise: 10, min: 10, max: 90, seed: 88, farmIndex: activeFarm
+    });
+    return raw.map((pt, i) => ({
+      ...pt,
+      water: pt.value,
+      power: Math.max(10, Math.min(95, pt.value * (0.85 + Math.sin(i * 0.5) * 0.1)))
+    }));
+  }, [resourceRange, activeFarm]);
+
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+
+  const T = {
+    title: isEn ? "Monitoring & Control Center" : "لوحة التحكم والمراقبة",
+    subtitle: isEn ? "A direct overview of greenhouse performance and equipment efficiency." : "نظرة شاملة ومباشرة على أداء المحميات وكفاءة تشغيل المعدات.",
+    commandCenter: isEn ? "Digital Twin Command Center" : "مركز قيادة التوأم الرقمي",
+    climate: isEn ? "Microclimate & Ventilation" : "المناخ والتهوية",
+    soil: isEn ? "Soil & Crop Health" : "بيئة وصحة التربة",
+    irrigation: isEn ? "Irrigation Management" : "إدارة الري",
+    dss: isEn ? "Smart Recommendations" : "التوصيات الذكية",
+    camera: isEn ? "Live Monitoring" : "المراقبة المباشرة",
+    automationActive: isEn ? "Smart Automation Active" : "نظام الأتمتة الذكي نشط",
+    inferenceActive: isEn ? "Inference Engine Active" : "محرك الاستدلال نشط",
+    fullLogic: isEn ? "Full Logic Reasoning" : "تفسير منطقي كامل",
+  };
+
   return (
     <>
       <style>{waveStyles}</style>
-      <div className="w-full h-full overflow-auto p-5 min-h-0 page-enter" dir="rtl">
+      <div className="w-full h-full overflow-auto px-8 py-5 min-h-0 page-enter">
       <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-5">
 
         {/* Page Header */}
-        <div className="flex items-center gap-3 animate-fade-in-down mb-2 mt-2">
-          <div className="w-12 h-12 rounded-2xl bg-[#E8F5E9] flex items-center justify-center flex-shrink-0 border border-green-200">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex items-center gap-3 animate-fade-in-down mb-1 mt-1">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center flex-shrink-0 border border-emerald-100/50">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1.5" />
               <rect x="14" y="3" width="7" height="7" rx="1.5" />
               <rect x="3" y="14" width="7" height="7" rx="1.5" />
               <rect x="14" y="14" width="7" height="7" rx="1.5" />
             </svg>
           </div>
-          <div className="text-right">
-            <h1 className="text-3xl font-black text-gray-800">مركز العمليات والتحكم</h1>
-            <p className="text-[14px] font-semibold text-[#2E7D32] mt-1">نظرة شاملة ومباشرة على أداء المحميات وكفاءة تشغيل المعدات.</p>
+          <div className={`${isEn ? 'text-left' : 'text-right'}`}>
+            <div className="text-lg font-bold text-gray-800 tracking-tight">{T.title}</div>
+            <div className="text-[12px] font-medium text-gray-400 mt-1">{T.subtitle}</div>
           </div>
         </div>
 
@@ -51,10 +112,10 @@ export function DashboardHome({ onGo, onSendAI, globalAutoMode, onOpenAssets }) 
 
           {/* Main Grid: AI Modules Overview */}
           <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5 min-w-0">
-            <div className="animate-fade-in-up delay-2 h-full"><MicroclimateGlanceCard onGo={onGo} /></div>
-            <div className="animate-fade-in-up delay-3 h-full"><SoilCropHealthGlanceCard onGo={onGo} /></div>
-            <div className="animate-fade-in-up delay-4 h-full"><IrrigationGlanceCard onGo={onGo} globalAutoMode={globalAutoMode} /></div>
-            <div className="animate-fade-in-up delay-5 h-full"><DSSGlanceCard onGo={onGo} /></div>
+            <div className="animate-fade-in-up delay-2 h-full"><MicroclimateGlanceCard onGo={onGo} seconds={seconds} activeFarm={activeFarm} /></div>
+            <div className="animate-fade-in-up delay-3 h-full"><SoilCropHealthGlanceCard onGo={onGo} seconds={seconds} activeFarm={activeFarm} /></div>
+            <div className="animate-fade-in-up delay-4 h-full"><IrrigationGlanceCard onGo={onGo} globalAutoMode={globalAutoMode} seconds={seconds} activeFarm={activeFarm} /></div>
+            <div className="animate-fade-in-up delay-5 h-full"><DSSGlanceCard onGo={onGo} seconds={seconds} activeFarm={activeFarm} /></div>
           </div>
 
           {/* Side Column: Camera / Live Monitoring */}
@@ -64,59 +125,15 @@ export function DashboardHome({ onGo, onSendAI, globalAutoMode, onOpenAssets }) 
 
         </div>
 
+
       </div>
     </div>
     </>
   );
 }
 
-// --- NEW SEMANTIC ICONS ---
-function PlantSoilIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Soil Mound */}
-      <path d="M4 20c0-3 3-4 8-4s8 1 8 4" />
-      {/* Plant/Seedling */}
-      <path d="M12 16V8" />
-      <path d="M12 8c-2-2-5-2-5 0 0 3 3 4 5 4" />
-      <path d="M12 8c2-2 5-2 5 0 0 3-3 4-5 4" />
-    </svg>
-  );
-}
 
-function WaterValveIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 12h16" />
-      <path d="M12 12V8" />
-      <circle cx="12" cy="6" r="3" />
-      <path d="M12 12s-2 2-2 5 2 5 2 5 2-2 2-5-2-5-2-5Z" />
-    </svg>
-  );
-}
 
-function ListIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6" />
-      <line x1="8" y1="12" x2="21" y2="12" />
-      <line x1="8" y1="18" x2="21" y2="18" />
-      <line x1="3" y1="6" x2="3.01" y2="6" />
-      <line x1="3" y1="12" x2="3.01" y2="12" />
-      <line x1="3" y1="18" x2="3.01" y2="18" />
-    </svg>
-  );
-}
-
-function WindIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.7 7.7A2.5 2.5 0 1 1 20 12H5" />
-      <path d="M9.601 3.599A2.5 2.5 0 1 0 8 8h12" />
-      <path d="M11.3 20.3A2.5 2.5 0 1 1 9 16h12" />
-    </svg>
-  );
-}
 
 /* =========================================================
    Glance Cards representing AI Modules
@@ -128,13 +145,47 @@ function LiveStatusFooter({ time = "منذ 5 دقائق" }) {
   return null;
 }
 
-function SoilSparkline() {
-  // Static path simulating a 24h moisture trend
+function ClimateSparkline() {
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
   return (
     <div className="flex flex-col gap-1.5 h-full justify-center">
       <div className="flex items-center justify-between opacity-70">
-        <div className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">اتجاه الرطوبة (24h)</div>
-        <div className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded-md">Max: 48%</div>
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{isEn ? 'Temp Trend (24h)' : 'ميول الحرارة (٢٤ ساعة)'}</div>
+        <div className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 rounded-md">{isEn ? 'Peak' : 'الأعلى'}: ٣٤°C</div>
+      </div>
+      <div className="relative w-32 h-16 bg-gray-50/30 rounded-xl overflow-hidden border border-gray-100/50 flex items-center">
+        <svg viewBox="0 0 100 40" className="w-full h-full preserve-3d ml-2">
+          <defs>
+            <linearGradient id="climateGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path 
+            d="M0 35 Q 20 5, 40 25 T 70 10 T 100 30" 
+            fill="none" 
+            stroke="#ef4444" 
+            strokeWidth="2.5" 
+            strokeLinecap="round"
+            className="drop-shadow-[0_0_4px_rgba(239,68,68,0.2)]"
+          />
+          <path 
+            d="M0 35 Q 20 5, 40 25 T 70 10 T 100 30 L 100 40 L 0 40 Z" 
+            fill="url(#climateGradient)" 
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function SoilSparkline() {
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
+  return (
+    <div className="flex flex-col gap-1.5 h-full justify-center">
+      <div className="flex items-center justify-between opacity-70">
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">{isEn ? 'Moisture Trend (24h)' : 'اتجاه الرطوبة (٢٤ ساعة)'}</div>
+        <div className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 rounded-md">{isEn ? 'Peak' : 'الأعلى'}: ٤٨٪</div>
       </div>
       
       <div className="relative w-36 h-16 bg-gray-50/30 rounded-xl overflow-hidden border border-gray-100/50 flex items-center">
@@ -171,65 +222,86 @@ function SoilSparkline() {
         </svg>
       </div>
 
-      <div className="flex items-center justify-between px-1">
-        <span className="text-[9px] font-bold text-gray-400">تحليل الميول مستقر</span>
-        <span className="text-[9px] font-black text-gray-300">Min: 32%</span>
+      <div className={`flex items-center justify-between px-1 ${isEn ? 'flex-row-reverse' : ''}`}>
+        <span className="text-[9px] font-bold text-gray-400">{isEn ? 'Stable Trend' : 'تحليل الميول مستقر'}</span>
+        <span className="text-[9px] font-black text-gray-300">{isEn ? 'Low' : 'الأقل'}: ٣٢٪</span>
       </div>
     </div>
   );
 }
 
-function MicroclimateGlanceCard({ onGo }) {
-  const temp = 31;
-  const hum = 58;
+function MicroclimateGlanceCard({ onGo, seconds, activeFarm }) {
+  const data = getLiveFarmData(activeFarm);
+  const isOptimal = data.temp < 32 && data.hum < 65;
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
 
   return (
-    <CardShell className="p-5 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("microclimate")}>
+    <CardShell className="p-6 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-300/40 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("microclimate")}>
       <CardTopRow 
-        title="المناخ والتهوية" 
-        subtitle="آخر تحديث: منذ 5 دقائق" 
+        title={isEn ? "Climate & Ventilation" : "المناخ والتهوية"} 
+        subtitle={formatLastUpdated(seconds)} 
         icon={<WindIcon />} 
       />
 
-      <div className="mt-4 flex items-end justify-between">
-        <div className="flex flex-col gap-4">
+      <div className={`mt-4 flex items-end justify-between gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex flex-col gap-4 ${isEn ? 'items-end text-right' : 'items-start text-left'}`}>
           <div className="flex flex-col">
-            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">درجة الحرارة</div>
-            <div className="text-4xl font-black text-gray-800 leading-none">{temp}<span className="text-[14px] font-bold text-gray-400 mr-1.5">°C</span></div>
+            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">{isEn ? 'Temperature' : 'درجة الحرارة'}</div>
+            <div className={`text-4xl font-black text-gray-800 leading-none ${isEn ? 'flex flex-row-reverse items-baseline justify-end' : ''}`}>
+              {data.temp.toFixed(1)}<span className="text-[14px] font-bold text-gray-400 mx-1.5">°C</span>
+            </div>
           </div>
           <div className="flex flex-col">
-            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">رطوبة الجو</div>
-            <div className="text-4xl font-black text-gray-800 leading-none">{hum}<span className="text-[14px] font-bold text-gray-400 mr-1.5">%</span></div>
+            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">{isEn ? 'Air Humidity' : 'رطوبة الجو'}</div>
+            <div className={`text-4xl font-black text-gray-800 leading-none ${isEn ? 'flex flex-row-reverse items-baseline justify-end' : ''}`}>
+              {data.hum.toFixed(0)}<span className="text-[14px] font-bold text-gray-400 mx-1.5">٪</span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm min-w-[70px]">
-           <div className="text-[10px] font-bold text-emerald-600 mb-0.5">الوضع</div>
-           <div className="text-[13px] font-black text-[#2E7D32]">مثالي</div>
+        <div className="flex flex-col items-center gap-4">
+           <div className={`px-3 py-2 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm min-w-[70px] border ${isOptimal ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+              <div className={`text-[10px] font-bold mb-0.5 ${isOptimal ? 'text-emerald-600' : 'text-amber-600'}`}>{isEn ? 'Status' : 'الوضع'}</div>
+              <div className={`text-[13px] font-black ${isOptimal ? 'text-emerald-700' : 'text-amber-700'}`}>{isOptimal ? (isEn ? 'Optimal' : 'مثالي') : (isEn ? 'Alert' : 'تنبيه')}</div>
+           </div>
+           <div className="w-full">
+              <ClimateSparkline />
+           </div>
         </div>
       </div>
     </CardShell>
   );
 }
 
-function SoilCropHealthGlanceCard({ onGo }) {
+function SoilCropHealthGlanceCard({ onGo, seconds, activeFarm }) {
+  const data = getLiveFarmData(activeFarm);
+  const isHealthy = data.soilMoist > 30 && data.soilMoist < 55;
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
+
   return (
-    <CardShell className="p-5 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("soil")}>
+    <CardShell className="p-6 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-300/40 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("soil")}>
       <CardTopRow 
-        title="حالة وبيئة التربة" 
-        subtitle="آخر تحديث: منذ 5 دقائق" 
+        title={isEn ? "Soil & Crop Health" : "بيئة وصحة التربة"} 
+        subtitle={formatLastUpdated(seconds)} 
         icon={<PlantSoilIcon />} 
       />
 
-      <div className="mt-4 flex items-end justify-between gap-4">
-        <div className="flex flex-col gap-5">
+      <div className={`mt-4 flex items-end justify-between gap-4 ${isEn ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex flex-col gap-5 ${isEn ? 'items-end text-right' : 'items-start text-left'}`}>
           <div className="flex flex-col">
-            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">حرارة التربة</div>
-            <div className="text-4xl font-black text-gray-800 leading-none">24<span className="text-[14px] font-bold text-gray-400 mr-1.5">°C</span></div>
+            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">{isEn ? 'Soil Temp' : 'حرارة التربة'}</div>
+            <div className={`text-4xl font-black text-gray-800 leading-none ${isEn ? 'flex flex-row-reverse items-baseline justify-end' : ''}`}>
+              {data.soilTemp.toFixed(1)}<span className="text-[14px] font-bold text-gray-400 mx-1.5">°C</span>
+            </div>
           </div>
           <div className="flex flex-col">
-            <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">رطوبة التربة</div>
-            <div className="text-4xl font-black text-gray-800 leading-none">42<span className="text-[14px] font-bold text-gray-400 mr-1.5">%</span></div>
+            <div className={`text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+              {isEn ? 'Soil Moisture' : 'رطوبة التربة'}
+              <span className={`w-2.5 h-2.5 rounded-full ${isHealthy ? 'bg-emerald-600' : 'bg-amber-500'}`} />
+            </div>
+            <div className={`text-4xl font-black text-gray-800 leading-none ${isEn ? 'flex flex-row-reverse items-baseline justify-end' : ''}`}>
+              {data.soilMoist.toFixed(0)}<span className="text-[14px] font-bold text-gray-400 mx-1.5">٪</span>
+            </div>
           </div>
         </div>
 
@@ -241,100 +313,148 @@ function SoilCropHealthGlanceCard({ onGo }) {
   );
 }
 
-function IrrigationGlanceCard({ onGo, globalAutoMode }) {
+function IrrigationGlanceCard({ onGo, globalAutoMode, seconds, activeFarm }) {
+  const data = getLiveFarmData(activeFarm);
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
   return (
-    <CardShell className="p-5 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between" onClick={() => onGo("irrigation")}>
+    <CardShell className="p-6 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-300/40 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between" onClick={() => onGo("irrigation")}>
       <CardTopRow 
-        title="إدارة الري" 
-        subtitle="آخر تحديث: منذ 5 دقائق" 
-        icon={<WaterValveIcon />} 
+        title={isEn ? "Irrigation Management" : "إدارة الري"} 
+        subtitle={formatLastUpdated(seconds)} 
+        icon={<IrrigationSmartIcon />} 
       />
 
-      <div className="mt-4 flex items-end justify-between gap-2">
-        <div className="flex flex-col gap-4">
+      <div className={`mt-4 flex items-end justify-between gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex flex-col gap-4 ${isEn ? 'items-end text-right' : 'items-start text-left'}`}>
           <div className="flex flex-col">
-            <div className="text-[10px] text-emerald-600 font-black px-2 py-0.5 bg-emerald-50 border border-emerald-100 rounded-lg w-max mb-3 shadow-sm flex items-center gap-1.5">
+            <div className="text-[10px] text-emerald-700 font-black px-2 py-1 bg-emerald-50 border border-emerald-100/50 rounded-lg w-max mb-3 shadow-sm flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5 ">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#10b981]"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
               </span>
-              المصادر محتجزة
+              {isEn ? 'Resources Reserved' : 'المصادر محتجزة'}
             </div>
             
             <div className="flex flex-col">
-              <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight">الاستهلاك اليومي</div>
-              <div className="text-4xl font-black text-gray-800 tracking-tight">120 <span className="text-[14px] font-bold text-gray-400 mr-1.5 tracking-normal">Litre</span></div>
+              <div className="text-[12px] text-gray-400 font-bold uppercase mb-0.5 tracking-tight font-black">{isEn ? 'Total Daily Usage' : 'إجمالي استهلاك اليوم'}</div>
+              <div className={`text-4xl font-black text-gray-800 tracking-tight ${isEn ? 'flex flex-row-reverse items-baseline justify-end' : ''}`}>
+                {data.waterUsage} <span className="text-[14px] font-bold text-gray-400 mx-1.5 tracking-normal">{isEn ? 'L' : 'لتر'}</span>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="relative w-20 h-20 mb-1 flex items-center justify-center">
-          <Donut value={60} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-[12px] font-black text-emerald-700">60%</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-24 h-24 flex items-center justify-center">
+            <Donut value={Math.round(data.flowRate)} />
+          </div>
+          
+          <div className="flex flex-col gap-1.5 w-full bg-gray-50/40 p-2 rounded-2xl border border-gray-100/50 min-w-[120px]">
+             <div className={`flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+                <div className="w-5 h-5 rounded-lg bg-emerald-100/30 flex items-center justify-center text-emerald-600 border border-emerald-100/50">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                </div>
+                <div className="flex-1 h-1.5 bg-gray-200/40 rounded-full overflow-hidden">
+                   <div className="h-full bg-emerald-500 w-[70%] rounded-full shadow-[0_0_8px_rgba(16,185,129,0.3)]" />
+                </div>
+             </div>
+             <div className={`flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
+                <div className="w-5 h-5 rounded-lg bg-emerald-100/30 flex items-center justify-center text-emerald-600 border border-emerald-100/50">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </div>
+                <div className="flex-1 h-1.5 bg-gray-200/40 rounded-full overflow-hidden">
+                   <div className="h-full bg-emerald-300 w-[45%] rounded-full shadow-[0_0_8px_rgba(110,231,183,0.3)]" />
+                </div>
+             </div>
           </div>
         </div>
       </div>
 
       {globalAutoMode && (
         <div className="bg-emerald-50/40 border border-emerald-100/30 rounded-xl py-1.5 px-3 mt-4 flex items-center justify-center gap-2">
-           <div className="w-1 h-1 rounded-full bg-emerald-500" />
-           <span className="text-[11px] font-black text-[#15803d]">نظام الأتمتة الذكي نشط</span>
+           <div className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+           <span className="text-[11px] font-black text-emerald-700">{isEn ? 'Smart Automation Active' : 'نظام الأتمتة الذكي نشط'}</span>
         </div>
       )}
     </CardShell>
   );
 }
 
-function DSSGlanceCard({ onGo }) {
-  const decisions = [
-    { text: "تأجيل الري: الرطوبة كافية ليوم إضافي", tone: "info" },
-    { text: "تنسيق تبريد استباقي لمنع الإجهاد الحراري", tone: "alert" },
+function DSSGlanceCard({ onGo, seconds, activeFarm }) {
+  const isEn = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language === 'en');
+  const decisions = isEn ? [
+    { 
+      title: "Scheduled Irrigation Delayed", 
+      reason: "Sufficient soil moisture (42%) detected to sustain roots for an additional 24h.",
+      status: "Delayed" 
+    },
+    { 
+      title: "Active Pre-cooling Triggered", 
+      reason: "Gradual temp rise (+3°C) predicted within the next two hours.",
+      status: "Active Now" 
+    },
+  ] : [
+    { 
+      title: "تأجيل الري المبرمج", 
+      reason: "تم رصد نسبة رطوبة تربة كافية (٤٢٪) لاستدامة الجذور لـ ٢٤ ساعة إضافية.",
+      status: "تم التأجيل" 
+    },
+    { 
+      title: "تفعيل التبريد الاستباقي", 
+      reason: "ارتفاع تدريجي متوقع في الحرارة (+٣°C) خلال الساعتين القادمتين.",
+      status: "نشط حالياً" 
+    },
   ];
+
   return (
-    <CardShell className="p-5 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-200/60 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("dss")}>
+    <CardShell className="p-6 h-full cursor-pointer hover:shadow-xl hover:shadow-gray-300/40 transition-all duration-300 group flex flex-col justify-between" onClick={() => onGo("dss")}>
       <CardTopRow 
-        title="مساعد القرار الذكي" 
-        subtitle="آخر تحديث: منذ 5 دقائق" 
+        title={isEn ? "Inference Engine" : "التوصيات الذكية"} 
+        subtitle={formatLastUpdated(seconds)} 
         icon={<ListIcon />} 
       />
 
-      <div className="mt-4 flex-1 flex flex-col gap-2.5">
+      <div className="mt-4 flex-1 flex flex-col gap-3">
         {decisions.map((item, idx) => (
-          <div key={idx} className="flex items-start gap-4 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-[0_2px_4px_rgba(0,0,0,0.015)] hover:border-emerald-100 transition-colors">
-            <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${item.tone === 'alert' ? 'bg-[#2E7D32]' : 'bg-[#10b981]'}`} />
-            <div className="text-[12px] font-black text-gray-700 leading-tight">{item.text}</div>
+          <div key={idx} className="flex flex-col gap-1.5 p-4 bg-gray-50/50 rounded-2xl border border-gray-100 hover:border-emerald-200 transition-all shadow-sm">
+            <div className={`flex items-center justify-between ${isEn ? 'flex-row-reverse' : ''}`}>
+              <div className="text-[13px] font-black text-gray-800">{item.title}</div>
+              <div className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">{item.status}</div>
+            </div>
+            <div className={`text-[11px] font-bold text-gray-500 leading-relaxed ${isEn ? 'border-l-2 pl-2 text-right' : 'border-r-2 pr-2 text-left'} border-emerald-500/30`}>
+              <span className="text-emerald-600 mx-1">{isEn ? ':Logic' : 'المنطق:'}</span>
+              {item.reason}
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-4 pt-3 flex items-center justify-between border-t border-gray-50/50">
-        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">تحليل النظم نشط</div>
-        <div className="bg-emerald-100/50 text-[#2E7D32] px-2 py-0.5 rounded-lg text-[10px] font-black border border-emerald-100">12 توصية يومية</div>
+      <div className={`mt-5 pt-3 flex items-center justify-between border-t border-gray-50 ${isEn ? 'flex-row-reverse' : ''}`}>
+        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{isEn ? 'Infer Engine Active' : 'محرك الاستدلال نشط'}</div>
+        <div className="flex items-center gap-1.5">
+           <div className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+           <span className="text-[10px] font-black text-emerald-600">{isEn ? 'Full Logical Explain' : 'تفسير منطقي كامل'}</span>
+        </div>
       </div>
     </CardShell>
   );
 }
 
-/* =========================================================
-   Digital Twin Command Center Card (Simplified)
-========================================================= */
-/* =========================================================
-   Digital Twin Command Center Card (Ultra-Minimalist)
-========================================================= */
 function DigitalTwinCommandCenterCard({ onOpenAssets }) {
+  const lang = (window.localStorage.getItem('warif_user') && JSON.parse(window.localStorage.getItem('warif_user')).language) || 'ar';
+  const isEn = lang === 'en';
+
   return (
-    <CardShell className="p-5 lg:p-5 relative overflow-hidden bg-white border border-gray-100/80 shadow-[0_2px_8px_rgba(0,0,0,0.01)] group/main">
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 relative z-10 w-full items-center">
+    <CardShell className="p-6 lg:p-7 relative overflow-hidden bg-white border border-gray-100/80 shadow-[0_2px_8px_rgba(0,0,0,0.01)] group/main">
+      <div className={`flex flex-col lg:flex-row gap-5 lg:gap-10 relative z-10 w-full items-center ${isEn ? 'flex-row-reverse' : ''}`}>
         
-        <div className="w-full lg:w-[45%] flex flex-col justify-center pr-0 lg:pr-8 text-right">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100 text-[11px] font-black text-[#2E7D32] mb-3 w-max">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            محرك التوأم الرقمي 
+        <div className={`w-full lg:w-[45%] flex flex-col justify-center text-right pr-0 lg:pr-8`}>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-full border border-emerald-100 text-[11px] font-black text-emerald-700 mb-3 w-max ${isEn ? 'ml-auto' : ''}`}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            {isEn ? 'Digital Twin Engine' : 'محرك التوأم الرقمي'}
           </div>
-          <h3 className="text-2xl font-black tracking-tight mb-2 text-gray-800 leading-tight">التوأم الرقمي للمزرعة</h3>
-          <p className="text-[13px] text-gray-400 font-medium leading-relaxed">
-            تمثيل رقمي دقيق متصل في الوقت الفعلي مع كافّة الحساسات لمراقبة بيئة المزرعة لحظياً وإدارة كفاءة التشغيل.
+          <h3 className={`text-2xl font-black tracking-tighter mb-2 text-gray-800 leading-tight ${isEn ? 'text-left' : 'text-right'}`}>{isEn ? 'Digital Twin Command Center' : 'مركز قيادة التوأم الرقمي'}</h3>
+          <p className={`text-[13px] text-gray-400 font-semibold leading-relaxed ${isEn ? 'text-left' : 'text-right'}`}>
+            {isEn ? 'A precise real-time digital representation connected with all sensors to monitor the farm environment and manage efficiency.' : 'تمثيل رقمي دقيق متصل في الوقت الفعلي مع كافّة الحساسات لمراقبة بيئة المزرعة لحظياً وإدارة كفاءة التشغيل.'}
           </p>
         </div>
 
@@ -343,16 +463,16 @@ function DigitalTwinCommandCenterCard({ onOpenAssets }) {
 
         <div className="w-full lg:w-[50%] cursor-pointer group/assets" onClick={onOpenAssets}>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <div className="text-[13px] font-black text-gray-800">سجل المعدات والأجهزة</div>
-                <div className="text-[9px] text-[#2E7D32] font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 rounded-lg">نشط</div>
+            <div className={`flex items-center justify-between ${isEn ? 'flex-row-reverse' : ''}`}>
+                <div className="text-[13px] font-black text-gray-800">{isEn ? 'Hardware & Sensors Log' : 'سجل المعدات والأجهزة'}</div>
+                <div className="text-[9px] text-emerald-700 font-black uppercase tracking-widest px-2 py-0.5 bg-emerald-50 rounded-lg">{isEn ? 'Active' : 'نشط'}</div>
             </div>
 
             <div className="grid grid-cols-4 gap-1">
-              <MinimalStat value="4" label="حساسات" />
-              <MinimalStat value="2" label="مضخات" />
-              <MinimalStat value="1" label="كاميرا" />
-              <MinimalStat value="6" label="تبريد" />
+              <MinimalStat value="4" label={isEn ? 'Sensors' : 'حساسات'} />
+              <MinimalStat value="2" label={isEn ? 'Pumps' : 'مضخات'} />
+              <MinimalStat value="1" label={isEn ? 'Camera' : 'كاميرا'} />
+              <MinimalStat value="6" label={isEn ? 'Cooling' : 'تبريد'} />
             </div>
           </div>
         </div>
@@ -363,19 +483,9 @@ function DigitalTwinCommandCenterCard({ onOpenAssets }) {
 
 function MinimalStat({ value, label }) {
   return (
-    <div className="flex flex-col items-center">
-      <div className="text-[28px] font-black text-gray-800 leading-none">{value}</div>
-      <div className="text-[10px] text-gray-400 font-black mt-0.5 uppercase tracking-tighter">{label}</div>
+    <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-gray-50/50 border border-gray-100/50 group-hover/assets:border-emerald-100 transition-all">
+      <div className="text-lg font-black text-gray-800">{value}</div>
+      <div className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">{label}</div>
     </div>
-  );
-}
-
-
-function CameraIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-      <circle cx="12" cy="13" r="4"/>
-    </svg>
   );
 }
