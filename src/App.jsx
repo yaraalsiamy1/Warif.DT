@@ -3,7 +3,9 @@ import SignIn from './pages/SignIn'
 import Dashboard from './pages/Dashboard'
 
 export default function App() {
-  const [screen, setScreen] = useState('login')
+  const [screen, setScreen] = useState(() => {
+    return localStorage.getItem('warif_logged_in') === 'true' ? 'dashboard' : 'login';
+  });
   const [lang, setLang] = useState(() => {
     const saved = JSON.parse(localStorage.getItem('warif_user') || '{}');
     return saved.language || 'ar';
@@ -16,7 +18,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
       {screen === 'login' && (
         <SignIn onLogin={() => setScreen('dashboard')} lang={lang} onLangChange={handleLangChange} />
       )}

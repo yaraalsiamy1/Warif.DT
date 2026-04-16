@@ -12,11 +12,11 @@ export function PlaceholderPage({ page, onBack }) {
   const title = titleMap[page] || "صفحة";
 
   return (
-    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir="rtl">
+    <div className="w-full h-full px-4 md:px-8 py-5 overflow-auto page-enter" dir="rtl">
       <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div className="text-right">
-            <div className="text-xl font-bold text-gray-800">{title}</div>
+            <div className="text-xl font-black text-gray-800">{title}</div>
             <div className="text-[13px] text-gray-500 mt-1">
               Placeholder — سيتم تصميم الصفحة وربطها لاحقًا.
             </div>

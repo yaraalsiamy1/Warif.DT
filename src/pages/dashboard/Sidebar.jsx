@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { translations } from '../../i18n';
 import { 
   WeatherIcon, 
   PlantSoilIcon, 
@@ -26,19 +27,19 @@ export function Sidebar({ currentPage, onGo, T, activeFarm, setActiveFarm }) {
     : ["Vegetable Greenhouse", "Fruit Greenhouse", "Leafy Greens"];
 
   return (
-    <div className="w-64 bg-white border-l border-gray-100/60 flex flex-col flex-shrink-0 h-full">
+    <div className={`w-64 bg-white flex flex-col flex-shrink-0 h-full shadow-2xl lg:shadow-none ${isRtl ? 'border-l' : 'border-r'} border-gray-100/60`}>
       {/* Logo and System Name */}
-      <div className="pt-6 pb-4 flex flex-col items-center justify-center gap-1 border-b border-gray-100/60 mx-4">
-        <img src="/logo.png" alt="Warif" className="w-36 h-auto object-contain cursor-pointer drop-shadow-sm hover:scale-105 transition-transform duration-300" onClick={() => onGo("dashboard")} />
-        <div className="text-[15px] font-extrabold text-gray-800 tracking-wide mt-2">{isRtl ? 'نظام وارِف' : 'Warif System'}</div>
-        <div className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-100 mt-1 uppercase tracking-widest flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {isRtl ? 'التوأم الرقمي' : 'Digital Twin'}
+      <div className="pt-8 pb-6 flex flex-col items-center justify-center gap-2 mx-4 transition-all duration-300">
+        <img src="/logo.png" alt="Warif" className="w-40 h-auto object-contain cursor-pointer drop-shadow-sm hover:scale-105 transition-transform duration-300" onClick={() => onGo("dashboard")} />
+        <div className="text-[16px] font-black text-gray-800 tracking-tight mt-1">{isRtl ? 'نظام وارِف' : 'Warif System'}</div>
+        <div className="text-[9px] font-black text-emerald-600/60 tracking-[0.3em] uppercase opacity-80">
+          {T.digitalTwin}
         </div>
       </div>
 
       {/* Farms Selection */}
       <div className="p-4 border-b border-gray-50/80">
-        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">{isRtl ? 'اختيار المحمية' : 'Select Greenhouse'}</div>
+        <div className={`text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest ${isRtl ? 'text-right' : 'text-left'}`}>{translations[lang].selectGreenhouse}</div>
         {farms.map((farm, i) => (
           <div key={farm} onClick={() => { setActiveFarm(i); onGo("dashboard"); }} className={`sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer text-[13px] mb-1 transition-all duration-300 ${activeFarm === i ? "active bg-emerald-50 text-emerald-700 font-bold shadow-sm border border-emerald-100/50" : "text-gray-500 hover:bg-gray-50"
             }`}>
@@ -50,7 +51,7 @@ export function Sidebar({ currentPage, onGo, T, activeFarm, setActiveFarm }) {
 
       {/* Modules */}
       <div className="p-4 flex-1">
-        <div className="text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest">{isRtl ? 'تنسيق وتشغيل الوحدات' : 'Module Management'}</div>
+        <div className={`text-[11px] text-gray-400 font-bold mb-3 px-1 uppercase tracking-widest ${isRtl ? 'text-right' : 'text-left'}`}>{translations[lang].moduleControl}</div>
         {modulesMenu.map((item) => (
           <div key={item.page} onClick={() => onGo(item.page)}
             className={`sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer text-[13px] font-bold mb-1 transition-all duration-300 ${currentPage === item.page ? "active bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100/50" : "text-gray-600 hover:bg-gray-50/80"

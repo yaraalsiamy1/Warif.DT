@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { translations } from '../../i18n';
 import { 
   SensorTopBar, 
   CardShell, 
@@ -8,7 +9,7 @@ import {
   IrrigationSmartIcon,
   ListIcon 
 } from './dashboardShared';
-import { formatLastUpdated } from './dashboardUtils';
+import { formatLastUpdated, getAllCombinedRecommendations } from './dashboardUtils';
 
 export function DecisionSupportPage({ onBack, activeFarm }) {
   const [seconds, setSeconds] = useState(0);
@@ -24,7 +25,7 @@ export function DecisionSupportPage({ onBack, activeFarm }) {
     engineDesc: isEn ? "The system adjusts algorithms based on your feedback to improve sustainability." : "يقوم النظام بتعديل خوارزمياته بناءً على تقييماتك لزيادة الدقة والاستدامة.",
     autoAction: isEn ? "Auto Action" : "إجراء تلقائي",
     manualRec: isEn ? "Manual Rec" : "توصية يدوية",
-    reasoning: isEn ? "Scientific Reasoning" : "المبرر العلمي للقرار",
+    reasoning: isEn ? "Why?" : "لماذا؟",
     satisfaction: isEn ? "Rate this action:" : "ما مدى رضاك عن هذا الإجراء؟",
     accept: isEn ? "Accept" : "قبول التوصية",
     reject: isEn ? "Reject" : "رفض",
@@ -42,143 +43,21 @@ export function DecisionSupportPage({ onBack, activeFarm }) {
     return () => clearInterval(interval);
   }, [activeFarm]);
 
-  // Recommendations split by farm and language
+  // Use shared recommendations engine
   const allRecommendations = useMemo(() => {
-    const base = isEn ? [
-      {
-        id: "r1",
-        farmIndices: [0, 1, 2],
-        week: "This Week",
-        mode: "auto", 
-        type: "heat",
-        title: "Auto Action: Shading Activated",
-        desc: "Due to high solar radiation, the system activated 40% automated shading.",
-        reasoning: "Solar radiation peaked at 850 W/m², requiring preventive intervention to protect leaves from burning.",
-        time: "2 hours ago",
-        icon: <TempSunIcon />,
-        feedback: null, 
-      },
-      {
-         id: "v1",
-         farmIndices: [0],
-         week: "This Week",
-         mode: "manual",
-         type: "irrigation",
-         title: "Rec: Flowering Support (Vegetables)",
-         desc: "Low calcium levels detected; slight increase in irrigation volume is recommended.",
-         reasoning: "Sensor data shows moisture fluctuations. During fruiting, stable irrigation prevents fruit cracking.",
-         time: "4 hours ago",
-         icon: <IrrigationSmartIcon />,
-         status: "pending", 
-      },
-      {
-         id: "f1",
-         farmIndices: [1],
-         week: "This Week",
-         mode: "manual",
-         type: "irrigation",
-         title: "Rec: Sugar Conc. Check (Fruits)",
-         desc: "Gradual reduction in irrigation can stimulate sugar concentration in fruits.",
-         reasoning: "Digital twin predicts ripening in 5 days; water restriction enhances flavor and desired taste.",
-         time: "1 hour ago",
-         icon: <IrrigationSmartIcon />,
-         status: "pending", 
-      },
-      {
-         id: "l1",
-         farmIndices: [2],
-         week: "This Week",
-         mode: "manual",
-         type: "humidity",
-         title: "Rec: Transpiration Check (Leafy)",
-         desc: "Dew accumulation on wide leaves detected; ventilation is recommended.",
-         reasoning: "High interstitial humidity in lettuce leaves inhibits respiration; activating dry air prevents fungal growth.",
-         time: "30 mins ago",
-         icon: <AirHumidityIcon />,
-         status: "pending", 
-      },
-      {
-        id: "r3",
-        farmIndices: [0, 1, 2],
-        week: "This Week",
-        mode: "auto",
-        type: "humidity",
-        title: "Auto Action: Ventilation Activated",
-        desc: "Top windows opened automatically to reduce accumulated air humidity.",
-        reasoning: "Relative air humidity exceeded 85%; phased ventilation was activated to maintain target 65% range.",
-        time: "Yesterday",
-        icon: <AirHumidityIcon />,
-        feedback: "up",
-      }
-    ] : [
-      {
-        id: "r1",
-        farmIndices: [0, 1, 2],
-        week: "هذا الأسبوع",
-        mode: "auto", 
-        type: "heat",
-        title: "إجراء مؤتمت: تفعيل التظليل",
-        desc: "بسبب ارتفاع الإشعاع الشمسي، قام النظام بتفعيل التظليل الآلي بنسبة 40%.",
-        reasoning: "تم رصد ارتفاع مفاجئ في إشعاع الشمس (850 واط/م²) مما استدعى التدخل الوقائي لحماية الأوراق من الاحتراق.",
-        time: "منذ ساعتين",
-        icon: <TempSunIcon />,
-        feedback: null, 
-      },
-      {
-         id: "v1",
-         farmIndices: [0],
-         week: "هذا الأسبوع",
-         mode: "manual",
-         type: "irrigation",
-         title: "توصية: دعم التزهير (الخضروات)",
-         desc: "مستوى الكالسيوم المنخفض قد يسبب تعفن طرف الثمرة؛ يوصى بزيادة طفيفة في الري.",
-         reasoning: "بيانات الحساسات تشير لتذبذب في الرطوبة، وبما أن الخضروات في مرحلة الإثمار، فإن استقرار الري يمنع تشقق الثمار.",
-         time: "منذ 4 ساعات",
-         icon: <IrrigationSmartIcon />,
-         status: "pending", 
-      },
-      {
-         id: "f1",
-         farmIndices: [1],
-         week: "هذا الأسبوع",
-         mode: "manual",
-         type: "irrigation",
-         title: "توصية: فحص نسبة السكر (الفواكه)",
-         desc: "تقليل الري تدريجياً في هذه المرحلة يحفز تركيز السكر في الثمار.",
-         reasoning: "التوأم الرقمي يتوقع نضج المحصول خلال 5 أيام؛ تقنين المياه يعزز الطعم والمذاق المطلوب في الفواكه.",
-         time: "منذ ساعة",
-         icon: <IrrigationSmartIcon />,
-         status: "pending", 
-      },
-      {
-         id: "l1",
-         farmIndices: [2],
-         week: "هذا الأسبوع",
-         mode: "manual",
-         type: "humidity",
-         title: "توصية: فحص النتح (الورقيات)",
-         desc: "تراكم الندى على الأوراق العريضة قد يسبب بياض دقيقي؛ يوصى بالتهوية.",
-         reasoning: "ارتفاع الرطوبة البينية بين أوراق الخص يعيق التنفس؛ تفعيل الهواء الجاف يمنع نمو المستعمرات الفطرية.",
-         time: "منذ 30 دقيقة",
-         icon: <AirHumidityIcon />,
-         status: "pending", 
-      },
-      {
-        id: "r3",
-        farmIndices: [0, 1, 2],
-        week: "هذا الأسبوع",
-        mode: "auto",
-        type: "humidity",
-        title: "إجراء مؤتمت: تفعيل التهوية",
-        desc: "تم فتح النوافذ العلوية تلقائياً لخفض رطوبة الهواء المتراكمة.",
-        reasoning: "تجاوزت رطوبة الهواء النسبية حاجز 85%، وتم تفعيل التهوية المتدرجة للحفاظ على النطاق الآمن (65%).",
-        time: "أمس",
-        icon: <AirHumidityIcon />,
-        feedback: "up",
-      }
-    ];
-    return base.filter(r => r.farmIndices.includes(activeFarm));
+    return getAllCombinedRecommendations(activeFarm, isEn);
   }, [activeFarm, isEn]);
+
+  // Icon mapping helper
+  const getRecIcon = (type) => {
+    switch (type) {
+      case 'heat': return <TempSunIcon />;
+      case 'humidity': return <AirHumidityIcon />;
+      case 'irrigation': return <IrrigationSmartIcon />;
+      case 'soil': return <PlantSoilIcon />;
+      default: return <ListIcon />;
+    }
+  };
 
   const [localRecs, setLocalRecs] = useState([]);
 
@@ -197,7 +76,7 @@ export function DecisionSupportPage({ onBack, activeFarm }) {
   const sections = isEn ? ["This Week", "Last Week"] : ["هذا الأسبوع", "الأسبوع الماضي"];
 
   return (
-    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="w-full h-full px-4 md:px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-6">
         
         <SensorTopBar
@@ -205,56 +84,60 @@ export function DecisionSupportPage({ onBack, activeFarm }) {
           subtitle={T.subtitle}
           icon={<ListIcon />}
           onBack={onBack}
+          T={translations[lang]}
+          isRtl={isRtl}
         />
 
         {/* Insight Header */}
-        <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/30 rounded-2xl border border-emerald-100/50 p-6 flex items-center justify-between shadow-sm">
-          <div className={`flex items-center gap-4 ${isEn ? 'flex-row-reverse' : ''}`}>
-            <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center border border-emerald-100 shadow-sm text-emerald-600">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-            </div>
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.engineTitle}</div>
-              <div className="text-[12px] text-emerald-600 font-medium mt-1">{formatLastUpdated(seconds, T.lastDiagnose)}</div>
-              <div className="text-[12px] text-gray-500 mt-2 font-medium leading-relaxed max-w-sm">{T.engineDesc}</div>
+        <div className="animate-fade-in-up delay-1">
+          <div className={`bg-gradient-to-r from-emerald-50 to-emerald-100/30 rounded-2xl border border-emerald-100/50 p-4 flex items-center justify-between shadow-sm`}>
+            <div className={`flex items-center gap-4`}>
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center border border-emerald-100 shadow-sm text-emerald-600">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="7.5 4.21 12 6.81 16.5 4.21"/><polyline points="7.5 19.79 7.5 14.6 3 12"/><polyline points="21 12 16.5 14.6 16.5 19.79"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-[16px] font-bold text-gray-800 tracking-tight leading-tight">{T.engineTitle}</div>
+                <div className="text-[12px] text-emerald-600 font-medium mt-1">{formatLastUpdated(seconds, T.lastDiagnose)}</div>
+                <div className="text-[12px] text-gray-500 mt-2 font-medium leading-relaxed max-w-sm">{T.engineDesc}</div>
+              </div>
             </div>
           </div>
         </div>
 
         {sections.map(week => (
           <div key={week} className="flex flex-col gap-4">
-                <div className={`text-lg font-bold text-gray-800 tracking-tight flex items-center gap-2 mb-3 pt-4 ${isEn ? 'flex-row-reverse' : ''}`}>
+                <div className={`text-lg font-bold text-gray-800 tracking-tight flex items-center gap-2 mb-3 pt-4`}>
                   <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-tighter">{week}</span>
                   <div className="h-px bg-gray-100 flex-1" />
                 </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {localRecs.filter(r => r.week === week).map((item) => (
-                <CardShell key={item.id} className="relative overflow-hidden hover:shadow-xl transition-all duration-300 p-6">
-                  <div className={`flex flex-col md:flex-row md:items-start justify-between gap-5 ${isEn ? 'text-left' : 'text-right'}`}>
+              {localRecs.filter(r => r.week === week).map((item, idx) => (
+                <CardShell key={item.id} className={`animate-fade-in-up delay-${(idx % 5) + 2} relative overflow-hidden card-interactive p-3`}>
+                  <div className={`flex flex-col md:flex-row md:items-start justify-between gap-4 ${isRtl ? 'text-right' : 'text-left'}`}>
                     
-                    <div className={`flex items-start gap-4 flex-1 ${isEn ? 'flex-row-reverse' : ''}`}>
-                      <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 text-emerald-600 shadow-sm">
-                        {item.icon}
+                    <div className={`flex items-start gap-3 flex-1`}>
+                      <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 text-emerald-600 shadow-sm">
+                        {React.cloneElement(getRecIcon(item.type), { size: 16 })}
                       </div>
  
                       <div className="flex-1">
-                        <div className={`flex items-center gap-2 mb-1 ${isEn ? 'flex-row-reverse' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1">
                           <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${item.mode === 'auto' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
                             {item.mode === 'auto' ? T.autoAction : T.manualRec}
                           </span>
                           <span className="text-[12px] text-gray-400 font-bold tracking-tight">• {item.time}</span>
                         </div>
-                        <div className="text-lg font-bold text-gray-800 mb-1 tracking-tight">{item.title}</div>
-                        <div className="text-[14px] text-gray-500 font-semibold leading-relaxed mb-4">{item.desc}</div>
+                        <div className="text-[14px] font-black text-gray-800 mb-0.5 tracking-tight uppercase leading-tight">{item.title}</div>
+                        <div className="text-[12px] text-gray-500 font-semibold leading-relaxed mb-3">{item.desc}</div>
  
                         {/* Explainable AI (XAI) Section */}
-                        <div className="bg-emerald-50/20 rounded-2xl p-4 border border-dashed border-emerald-100">
-                           <div className={`flex items-center gap-2 text-[12px] font-black text-emerald-600 mb-1.5 uppercase ${isEn ? 'flex-row-reverse' : ''}`}>
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div className={`bg-emerald-50/20 rounded-2xl p-3 border border-dashed border-emerald-100 ${isRtl ? '' : 'text-left'}`}>
+                           <div className={`flex items-center gap-2 text-[12px] font-black text-emerald-600 mb-1 uppercase tracking-tight`}>
+                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                              {T.reasoning}
                            </div>
-                           <div className="text-[13px] text-gray-600 leading-normal font-bold italic">
+                           <div className="text-[11px] text-gray-600 leading-normal font-bold italic">
                              {item.reasoning}
                            </div>
                         </div>
@@ -262,9 +145,9 @@ export function DecisionSupportPage({ onBack, activeFarm }) {
                     </div>
 
                     {/* Action Section */}
-                    <div className={`flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0 ${isEn ? 'md:border-l md:pl-5 border-gray-100' : 'md:border-r md:pr-5 border-gray-100'}`}>
+                    <div className={`flex items-center gap-3 border-t md:border-t-0 pt-4 md:pt-0 ${isRtl ? 'md:border-r md:pr-5' : 'md:border-l md:pl-5'} border-gray-100`}>
                       {item.mode === 'auto' ? (
-                        <div className={`flex flex-col items-center gap-2 ${isEn ? 'md:items-start' : 'md:items-end'}`}>
+                        <div className="flex flex-col items-center gap-2 md:items-end">
                           <div className="text-[11px] font-bold text-gray-400">{T.satisfaction}</div>
                           <div className="flex items-center gap-2">
                             <button 

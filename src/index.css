@@ -91,10 +91,10 @@ select option {
   padding: 8px;
 }
 
-/* Smooth scrollbar */
+/* Premium Smooth Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -102,12 +102,19 @@ select option {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(46, 125, 50, 0.2);
+  background: rgba(46, 125, 50, 0.1);
   border-radius: 100px;
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(46, 125, 50, 0.35);
+  background: rgba(46, 125, 50, 0.3);
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(46, 125, 50, 0.15) transparent;
 }
 
 /* Selection */
@@ -356,6 +363,17 @@ select option {
   }
 }
 
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
 @keyframes orbFloat1 {
 
   0%,
@@ -516,6 +534,10 @@ select option {
   animation: chatSlideUp 400ms var(--ease-spring) both;
 }
 
+.animate-toast-in {
+  animation: toastIn 400ms var(--ease-spring) both;
+}
+
 /* Stagger delays */
 .delay-1 {
   animation-delay: 50ms;
@@ -582,17 +604,33 @@ select option {
 }
 
 .card-interactive {
-  transition: all var(--duration-fast) var(--ease-smooth);
+  transition: all var(--duration-normal) var(--ease-out-expo);
   cursor: pointer;
+  position: relative;
+}
+
+.card-interactive::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 rgba(46, 125, 50, 0);
+  transition: all var(--duration-normal) var(--ease-out-expo);
+  z-index: -1;
 }
 
 .card-interactive:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(46, 125, 50, 0.2);
+}
+
+.card-interactive:hover::after {
+  box-shadow: 0 10px 40px -10px rgba(46, 125, 50, 0.15);
 }
 
 .card-interactive:active {
-  transform: translateY(0) scale(0.99);
+  transform: translateY(-1px) scale(0.99);
 }
 
 /* =========================================================
@@ -640,6 +678,12 @@ select option {
   box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
   border-color: var(--green-400) !important;
   background: white !important;
+}
+
+.input-enhanced::placeholder {
+  color: #9ca3af;
+  opacity: 0.5;
+  font-weight: 500;
 }
 
 /* =========================================================
@@ -798,3 +842,19 @@ select option {
 .page-exit {
   animation: fadeIn 200ms var(--ease-smooth) both reverse;
 }
+/* Scanning Radar Effect */
+@keyframes radar-pulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.animate-radar {
+  animation: radar-pulse 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+@keyframes scan-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+}
+.animate-scan-glow {
+  animation: scan-glow 2s ease-in-out infinite;
+}
+

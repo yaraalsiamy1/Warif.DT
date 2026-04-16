@@ -210,6 +210,159 @@ export function getLiveFarmData(activeFarm) {
   };
 }
 
+export function getStrategicRecommendations(activeFarm, isEn) {
+  const base = isEn ? [
+    {
+      id: "r1",
+      farmIndices: [0, 1, 2],
+      mode: "auto", 
+      type: "heat",
+      title: "Auto Action: Shading Activated",
+      desc: "Due to high solar radiation, the system activated 40% automated shading.",
+      reasoning: "Solar radiation peaked at 850 W/m², requiring preventive intervention to protect leaves from burning.",
+      time: "2 hours ago",
+    },
+    {
+       id: "v1",
+       farmIndices: [0],
+       mode: "manual",
+       type: "irrigation",
+       title: "Rec: Flowering Support (Vegetables)",
+       desc: "Low calcium levels detected; slight increase in irrigation volume is recommended.",
+       reasoning: "Sensor data shows moisture fluctuations. During fruiting, stable irrigation prevents fruit cracking.",
+       time: "4 hours ago",
+       status: "pending", 
+    },
+    {
+       id: "f1",
+       farmIndices: [1],
+       mode: "manual",
+       type: "irrigation",
+       title: "Rec: Sugar Conc. Check (Fruits)",
+       desc: "Gradual reduction in irrigation can stimulate sugar concentration in fruits.",
+       reasoning: "Digital twin predicts ripening in 5 days; water restriction enhances flavor and desired taste.",
+       time: "1 hour ago",
+       status: "pending", 
+    },
+    {
+       id: "l1",
+       farmIndices: [2],
+       mode: "manual",
+       type: "humidity",
+       title: "Rec: Transpiration Check (Leafy)",
+       desc: "Dew accumulation on wide leaves detected; ventilation is recommended.",
+       reasoning: "High interstitial humidity in lettuce leaves inhibits respiration; activating dry air prevents fungal growth.",
+       time: "30 mins ago",
+       status: "pending", 
+    },
+    {
+       id: "r3",
+       farmIndices: [0, 1, 2],
+       mode: "auto",
+       type: "humidity",
+       title: "Auto Action: Ventilation Activated",
+       desc: "Top windows opened automatically to reduce accumulated air humidity.",
+       reasoning: "Relative air humidity exceeded 85%; phased ventilation was activated to maintain target 65% range.",
+       time: "Yesterday",
+    }
+  ] : [
+    {
+      id: "r1",
+      farmIndices: [0, 1, 2],
+      mode: "auto", 
+      type: "heat",
+      title: "إجراء مؤتمت: تفعيل التظليل",
+      desc: "بسبب ارتفاع الإشعاع الشمسي، قام النظام بتفعيل التظليل الآلي بنسبة 40%.",
+      reasoning: "تم رصد ارتفاع مفاجئ في إشعاع الشمس (850 واط/م²) مما استدعى التدخل الوقائي لحماية الأوراق من الاحتراق.",
+      time: "منذ ساعتين",
+    },
+    {
+       id: "v1",
+       farmIndices: [0],
+       mode: "manual",
+       type: "irrigation",
+       title: "توصية: دعم التزهير (الخضروات)",
+       desc: "مستوى الكالسيوم المنخفض قد يسبب تعفن طرف الثمرة؛ يوصى بزيادة طفيفة في الري.",
+       reasoning: "بيانات الحساسات تشير لتذبذب في الرطوبة، وبما أن الخضروات في مرحلة الإثمار، فإن استقرار الري يمنع تشقق الثمار.",
+       time: "منذ 4 ساعات",
+       status: "pending", 
+    },
+    {
+       id: "f1",
+       farmIndices: [1],
+       mode: "manual",
+       type: "irrigation",
+       title: "توصية: فحص نسبة السكر (الفواكه)",
+       desc: "تقليل الري تدريجياً في هذه المرحلة يحفز تركيز السكر في الثمار.",
+       reasoning: "التوأم الرقمي يتوقع نضج المحصول خلال 5 أيام؛ تقنين المياه يعزز الطعم والمذاق المطلوب في الفواكه.",
+       time: "منذ ساعة",
+       status: "pending", 
+    },
+    {
+       id: "l1",
+       farmIndices: [2],
+       mode: "manual",
+       type: "humidity",
+       title: "توصية: فحص النتح (الورقيات)",
+       desc: "تراكم الندى على الأوراق العريضة قد يسبب بياض دقيقي؛ يوصى بالتهوية.",
+       reasoning: "ارتفاع الرطوبة البينية بين أوراق الخص يعيق التنفس؛ تفعيل الهواء الجاف يمنع نمو المستعمرات الفطرية.",
+       time: "منذ 30 دقيقة",
+       status: "pending", 
+    },
+    {
+       id: "r3",
+       farmIndices: [0, 1, 2],
+       mode: "auto",
+       type: "humidity",
+       title: "إجراء مؤتمت: تفعيل التهوية",
+       desc: "تم فتح النوافذ العلوية تلقائياً لخفض رطوبة الهواء المتراكمة.",
+       reasoning: "تجاوزت رطوبة الهواء النسبية حاجز 85%، وتم تفعيل التهوية المتدرجة للحفاظ على النطاق الآمن (65%).",
+       time: "أمس",
+    }
+  ];
+  return base.filter(r => r.farmIndices.includes(activeFarm));
+}
+
+export function getAllCombinedRecommendations(activeFarm, isEn) {
+  const data = getLiveFarmData(activeFarm);
+  const tempRecs = sensorBuildRecommendationsTemperature(data.temp);
+  const humRecs = sensorBuildRecommendationsHumidity(data.hum);
+  const soilRecs = sensorBuildRecommendationsSoil(data.soilTemp, data.soilMoist);
+  const strategic = getStrategicRecommendations(activeFarm, isEn);
+
+  // Convert sensor-based to strategic format for consistency
+  const converted = [];
+  
+  tempRecs.forEach((r, i) => {
+    converted.push({
+      id: `live-temp-${i}`,
+      week: isEn ? "This Week" : "هذا الأسبوع",
+      mode: "auto",
+      type: "heat",
+      title: r.text,
+      desc: r.text,
+      reasoning: r.reasoning,
+      time: isEn ? "Live" : "لحظي"
+    });
+  });
+
+  humRecs.forEach((r, i) => {
+    converted.push({
+      id: `live-hum-${i}`,
+      week: isEn ? "This Week" : "هذا الأسبوع",
+      mode: "auto",
+      type: "humidity",
+      title: r.text,
+      desc: r.text,
+      reasoning: r.reasoning,
+      time: isEn ? "Live" : "لحظي"
+    });
+  });
+
+  // Return limited for card or full for page
+  return [...converted, ...strategic];
+}
+
 export {
   irrigationClamp,
   irrigationDaysInMonth,

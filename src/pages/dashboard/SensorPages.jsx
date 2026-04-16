@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { translations } from '../../i18n';
 import { 
   SensorTopBar, 
   CardShell, 
@@ -6,6 +7,7 @@ import {
   WindIcon
 } from './dashboardShared';
 import { HealthStyleBarChart, IrrigationActionButton } from './dashboardCharts';
+
 import { 
   generateDataForRange, 
   sensorBuildRecommendationsTemperature, 
@@ -53,6 +55,10 @@ export function MicroclimatePage({ onBack, globalAutoMode, activeFarm }) {
     lastUpdateEn: "Last Update",
   };
 
+  const handleExport = () => {
+    alert(isEn ? "Exporting Microclimate Report..." : "جاري تصدير تقرير المناخ والتهوية...");
+  };
+
   useEffect(() => {
     setSeconds(0);
     const interval = setInterval(() => {
@@ -79,7 +85,7 @@ export function MicroclimatePage({ onBack, globalAutoMode, activeFarm }) {
   ], [data.temp, data.hum]);
 
   return (
-    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="w-full h-full px-4 md:px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-6">
 
         <SensorTopBar
@@ -87,93 +93,114 @@ export function MicroclimatePage({ onBack, globalAutoMode, activeFarm }) {
           subtitle={T.subtitle}
           icon={<WindIcon />}
           onBack={onBack}
+          onExport={handleExport}
+          T={translations[lang]}
+          isRtl={isRtl}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.readings}</div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{lastUpdateLabel}</div>
-            </div>
-            <div className="flex flex-col gap-3">
-               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.temp}</span>
-                  <span className="text-xl font-black text-gray-800">{data.temp.toFixed(1)}°C</span>
-               </div>
-               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.hum}</span>
-                  <span className="text-xl font-black text-gray-800">{data.hum.toFixed(0)}٪</span>
-               </div>
-            </div>
-          </CardShell>
-
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className={`text-lg font-bold text-gray-800 tracking-tight leading-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
-                {T.recs} 
-                <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg border border-emerald-100/50 font-black">{T.smartAnalysis}</span>
+          <div className="animate-fade-in-up delay-1 h-full">
+            <CardShell className="p-5 flex flex-col gap-4 h-full card-interactive">
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-xl font-black text-gray-800 tracking-tight leading-tight">{T.readings}</div>
+                <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{lastUpdateLabel}</div>
               </div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.recsSub}</div>
-            </div>
-            <ul className="flex flex-col gap-4">
-               {recommendations.slice(0, 2).map((rec, i) => (
-                  <li key={i} className={`flex gap-3 group/rec ${isEn ? 'flex-row-reverse text-left' : 'text-right'}`}>
-                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-sm" />
-                     <div className="flex flex-col gap-1">
-                        <div className="text-[14px] font-bold text-gray-800 leading-tight group-hover/rec:text-emerald-700 transition-colors">{rec.text}</div>
-                        <div className={`text-[11px] font-medium text-gray-400 leading-relaxed ${isEn ? 'border-l-2 pl-2' : 'border-r-2 pr-2'} border-emerald-500/20`}>
-                           <span className="text-emerald-600 mx-1">{T.reason}</span>
-                           {rec.reasoning}
-                        </div>
-                     </div>
-                  </li>
-               ))}
-            </ul>
-          </CardShell>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group">
+                  <span className="text-[13px] font-bold text-gray-500 group-hover:text-gray-700">{T.temp}</span>
+                  <span className="text-2xl font-black text-gray-800">{data.temp.toFixed(1)}°C</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group">
+                  <span className="text-[13px] font-bold text-gray-500 group-hover:text-gray-700">{T.hum}</span>
+                  <span className="text-2xl font-black text-gray-800">{data.hum.toFixed(0)}٪</span>
+                </div>
+              </div>
+            </CardShell>
+          </div>
 
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.control}</div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.autoSub}</div>
-            </div>
-            {globalAutoMode ? (
-               <div className="bg-emerald-50/40 rounded-2xl p-4 text-center border border-emerald-100/30 flex items-center justify-center flex-1">
+          <div className="animate-fade-in-up delay-2 h-full">
+            <CardShell className="p-6 flex flex-col gap-4 h-full card-interactive">
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-xl font-black text-gray-800 tracking-tight leading-tight flex items-center gap-2">
+                  {T.recs} 
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-200/50 font-black tracking-tighter uppercase">{T.smartAnalysis}</span>
+                </div>
+                <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.recsSub}</div>
+              </div>
+              <ul className="flex flex-col gap-5">
+                {recommendations.slice(0, 2).map((rec, i) => (
+                  <li key={i} className={`flex gap-3 group/rec ${isRtl ? 'text-right' : 'text-left'}`}>
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[14px] font-black text-gray-800 leading-tight group-hover/rec:text-emerald-700 transition-colors uppercase tracking-tight">{rec.text}</div>
+                      <div className={`text-[12px] font-medium text-gray-500 leading-relaxed ${isRtl ? 'border-r-2 pr-3 border-emerald-500/20' : 'border-l-2 pl-3 border-emerald-500/20'}`}>
+                        <span className="font-black text-emerald-600 mx-1">{T.reason}</span>
+                        {rec.reasoning}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </CardShell>
+          </div>
+
+          <div className="animate-fade-in-up delay-3 h-full">
+            <CardShell className="p-6 flex flex-col gap-4 h-full card-interactive">
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-xl font-black text-gray-800 tracking-tight leading-tight">{T.control}</div>
+                <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.autoSub}</div>
+              </div>
+              {globalAutoMode ? (
+                <div className="bg-emerald-50/40 rounded-2xl p-4 text-center border border-emerald-100/30 flex items-center justify-center flex-1">
                   <div className="text-emerald-800 font-black text-[12px] leading-relaxed">{T.autoActive}</div>
-               </div>
-            ) : (
-               <div className="flex flex-col gap-2">
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
                   <span className="sr-only">Climate Control Actions</span>
                   <IrrigationActionButton 
                     active={activeAction === "cool"} onClick={() => setActiveAction("cool")}
-                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>}
-                  >{T.startCooling}</IrrigationActionButton>
+                    icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h16M12 4v16M20 8l-4 4 4 4M4 8l4 4-4 4"/></svg>}
+                    isRtl={isRtl}
+                  >
+                    {T.startCooling}
+                  </IrrigationActionButton>
                   <IrrigationActionButton 
                     active={activeAction === "stop"} onClick={() => setActiveAction("stop")}
-                    icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>}
-                  >{T.stopFans}</IrrigationActionButton>
-               </div>
-            )}
-          </CardShell>
+                    icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>}
+                    isRtl={isRtl}
+                  >
+                    {T.stopFans}
+                  </IrrigationActionButton>
+                </div>
+              )}
+            </CardShell>
+          </div>
         </div>
 
-        <CardShell className="p-6">
-           <div className={`mb-2 ${isEn ? 'text-left' : 'text-right'}`}>
-                <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.climateLog}</div>
-                <div className="text-[12px] font-medium text-gray-400 mt-0.5">{T.climateLogSub}</div>
-           </div>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="animate-fade-in-up delay-4">
+          <CardShell className="p-6 card-interactive">
+            <div className={`mb-2 ${isRtl ? 'text-right' : 'text-left'}`}>
+              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.climateLog}</div>
+              <div className="text-[12px] font-medium text-gray-400 mt-0.5">{T.climateLogSub}</div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <HealthStyleBarChart 
                 range={range} onRangeChange={setRange} data={tempSeries} 
                 unit="°C" metricName={T.tempChart} color="#10b981" 
                 yAxisTitle={T.tempY}
+                T={translations[lang]}
+                isRtl={isRtl}
               />
               <HealthStyleBarChart 
                 range={range} onRangeChange={setRange} data={humSeries} 
                 unit="٪" metricName={T.humChart} color="#10b981" 
                 yAxisTitle={T.humY}
+                T={translations[lang]}
+                isRtl={isRtl}
               />
-           </div>
-        </CardShell>
+            </div>
+          </CardShell>
+        </div>
       </div>
     </div>
   );
@@ -193,16 +220,12 @@ export function SoilRootDataPage({ onBack, globalAutoMode, activeFarm }) {
     title: isEn ? "Soil & Crop Health" : "بيئة وصحة التربة",
     subtitle: isEn ? "Monitoring soil vitality, moisture, and temperature." : "مراقبة حيوية التربة وتقييم رطوبتها وحرارتها.",
     soilData: isEn ? "Soil Readings" : "قياسات التربة",
-    liveSub: isEn ? "Live update from sensors" : "تحديث مباشر من الحساسات",
+    liveSub: isEn ? "Last Update" : "آخر تحديث",
     soilTemp: isEn ? "Soil Temp" : "حرارة التربة",
     soilMoist: isEn ? "Soil Moisture" : "رطوبة التربة",
     soilRecs: isEn ? "Soil Recs" : "توصيات التربة",
     smartAnalysis: isEn ? "Smart Analysis" : "تحليل ذكي",
-    anomalies: isEn ? "Soil structural anomalies" : "انحرافات وشذوذ في بنية التربة",
     reason: isEn ? "Reason:" : "السبب:",
-    soilProt: isEn ? "Soil Protection & Irrigation" : "حماية التربة وإدارة الري",
-    autoSub: isEn ? "Based on central automation status" : "يعتمد على حالة الأتمتة المركزية",
-    protActive: isEn ? "Root protection algorithm active. Irrigation only if moisture hits critical low." : "خوارزمية حماية الجذور نشطة، سيتم الري فقط عند نزول الرطوبة عن الحد الحرج.",
     bioTitle: isEn ? "Soil Biological Log" : "السجل الحيوي للتربة",
     bioSub: isEn ? "Tracking changes in productivity parameters." : "رصد تغيرات المعايير المؤثرة بالإنتاجية",
     tempChart: isEn ? "Soil Temp Patterns" : "أنماط حرارة التربة",
@@ -211,6 +234,10 @@ export function SoilRootDataPage({ onBack, globalAutoMode, activeFarm }) {
     moistY: isEn ? "Soil Moisture (%)" : "رطوبة التربة (٪)",
     lastUpdateAr: "آخر تحديث",
     lastUpdateEn: "Last Update",
+  };
+
+  const handleExport = () => {
+    alert(isEn ? "Exporting Soil Vitality Report..." : "جاري تصدير تقرير حيوية التربة...");
   };
 
   useEffect(() => {
@@ -236,7 +263,7 @@ export function SoilRootDataPage({ onBack, globalAutoMode, activeFarm }) {
   const soilRecs = useMemo(() => sensorBuildRecommendationsSoil(data.soilTemp, data.soilMoist), [data.soilTemp, data.soilMoist]);
 
   return (
-    <div className="w-full h-full px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
+    <div className="w-full h-full px-4 md:px-8 py-5 overflow-auto page-enter" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-[1150px] mx-auto flex flex-col gap-6">
 
         <SensorTopBar
@@ -244,79 +271,82 @@ export function SoilRootDataPage({ onBack, globalAutoMode, activeFarm }) {
           subtitle={T.subtitle}
           icon={<PlantSoilIcon />}
           onBack={onBack}
+          onExport={handleExport}
+          T={translations[lang]}
+          isRtl={isRtl}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.soilData}</div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.liveSub}</div>
-            </div>
-            <div className="flex flex-col gap-3">
-               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.soilTemp}</span>
-                  <span className="text-xl font-black text-gray-800">{data.soilTemp.toFixed(1)}°C</span>
-               </div>
-               <div className={`flex items-center justify-between p-3.5 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group ${isEn ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700">{T.soilMoist}</span>
-                  <span className="text-xl font-black text-gray-800">{data.soilMoist.toFixed(0)}٪</span>
-               </div>
-            </div>
-          </CardShell>
-
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className={`text-lg font-bold text-gray-800 tracking-tight leading-tight flex items-center gap-2 ${isEn ? 'flex-row-reverse' : ''}`}>
-                {T.soilRecs} 
-                <span className="text-[8px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-lg border border-emerald-100/50 font-black">{T.smartAnalysis}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="animate-fade-in-up delay-1 h-full">
+            <CardShell className="p-5 flex flex-col gap-4 bg-white border-gray-100 shadow-sm min-h-[220px] h-full card-interactive">
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-xl font-black text-gray-800 tracking-tight leading-tight">{T.soilData}</div>
+                <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{lastUpdateLabel}</div>
               </div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.anomalies}</div>
-            </div>
-            <ul className="flex flex-col gap-4">
-               {soilRecs.slice(0, 2).map((rec, i) => (
-                  <li key={i} className={`flex gap-3 group/rec ${isEn ? 'flex-row-reverse text-left' : 'text-right'}`}>
-                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0 shadow-sm" />
-                     <div className="flex flex-col gap-1">
-                        <div className="text-[14px] font-bold text-gray-800 leading-tight group-hover/rec:text-amber-700 transition-colors">{rec.text}</div>
-                        <div className={`text-[11px] font-medium text-gray-400 leading-relaxed ${isEn ? 'border-l-2 pl-2' : 'border-r-2 pr-2'} border-amber-500/20`}>
-                           <span className="text-amber-600 mx-1">{T.reason}</span>
-                           {rec.reasoning}
-                        </div>
-                     </div>
-                  </li>
-               ))}
-            </ul>
-          </CardShell>
+              <div className="flex-1 flex flex-col gap-4 justify-center">
+                <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group">
+                  <span className="text-[13px] font-bold text-gray-500 group-hover:text-gray-700">{T.soilTemp}</span>
+                  <span className="text-2xl font-black text-gray-800">{data.soilTemp.toFixed(1)}°C</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-sm transition-all group">
+                  <span className="text-[13px] font-bold text-gray-500 group-hover:text-gray-700">{T.soilMoist}</span>
+                  <span className="text-2xl font-black text-gray-800">{data.soilMoist.toFixed(0)}٪</span>
+                </div>
+              </div>
+            </CardShell>
+          </div>
 
-          <CardShell className="p-5 flex flex-col gap-4">
-            <div className={isEn ? 'text-left' : 'text-right'}>
-              <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.soilProt}</div>
-              <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{T.autoSub}</div>
-            </div>
-            <div className="bg-emerald-50/40 rounded-2xl p-4 text-center border border-emerald-100/30 flex items-center justify-center flex-1">
-                <div className="text-emerald-800 font-black text-[12px] leading-relaxed">{T.protActive}</div>
-            </div>
-          </CardShell>
+          <div className="animate-fade-in-up delay-2 h-full">
+            <CardShell className="p-6 flex flex-col gap-4 bg-white border-gray-100 shadow-sm min-h-[220px] h-full card-interactive">
+              <div className={isRtl ? 'text-right' : 'text-left'}>
+                <div className="text-xl font-black text-gray-800 tracking-tight leading-tight flex items-center gap-2">
+                  {T.soilRecs} 
+                  <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-200/50 font-black tracking-tighter uppercase">{T.smartAnalysis}</span>
+                </div>
+                <div className="text-[12px] font-medium text-gray-400 mt-1 mb-2">{isEn ? 'Suggested actions for root health.' : 'إجراءات مقترحة للحفاظ على صحة وسلامة الجذور.'}</div>
+              </div>
+              <ul className="flex flex-col gap-5">
+                {soilRecs.slice(0, 2).map((rec, i) => (
+                  <li key={i} className={`flex gap-3 group/rec ${isRtl ? 'text-right' : 'text-left'}`}>
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[14px] font-black text-gray-800 leading-tight group-hover/rec:text-emerald-700 transition-colors uppercase tracking-tight">{rec.text}</div>
+                      <div className={`text-[12px] font-medium text-gray-500 leading-relaxed ${isRtl ? 'border-r-2 pr-3 border-emerald-500/20' : 'border-l-2 pl-3 border-emerald-500/20'}`}>
+                        <span className="font-black text-emerald-600 mx-1">{T.reason}</span>
+                        {rec.reasoning}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </CardShell>
+          </div>
         </div>
 
-        <CardShell className="p-6">
-           <div className={`mb-2 ${isEn ? 'text-left' : 'text-right'}`}>
+        <div className="animate-fade-in-up delay-3">
+          <CardShell className="p-6 card-interactive">
+            <div className={`mb-2 ${isRtl ? 'text-right' : 'text-left'}`}>
               <div className="text-lg font-bold text-gray-800 tracking-tight leading-tight">{T.bioTitle}</div>
               <div className="text-[12px] font-medium text-gray-400 mt-1">{T.bioSub}</div>
-           </div>
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <HealthStyleBarChart 
                 range={range} onRangeChange={setRange} data={soilTempSeries} 
                 unit="°C" metricName={T.tempChart} color="#10b981" 
                 yAxisTitle={T.tempY}
+                T={translations[lang]}
+                isRtl={isRtl}
               />
               <HealthStyleBarChart 
                 range={range} onRangeChange={setRange} data={soilMoistSeries} 
                 unit="٪" metricName={T.moistChart} color="#10b981" 
                 yAxisTitle={T.moistY}
+                T={translations[lang]}
+                isRtl={isRtl}
               />
            </div>
-        </CardShell>
+          </CardShell>
+        </div>
       </div>
     </div>
   );

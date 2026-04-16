@@ -32,10 +32,10 @@ export function AutomationToggleCard({ isActive, onToggle, title="الأتمتة
   );
 }
 
-function CardTopRow({ title, subtitle, onDetails, detailsLabel, icon }) {
+function CardTopRow({ title, subtitle, onDetails, detailsLabel, icon, isEn = false }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <div className="flex items-start gap-3 text-right">
+      <div className="flex items-start gap-3">
         {icon && (
           <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100/50 flex items-center justify-center text-[#2E7D32] shadow-sm">
             {icon}
@@ -52,7 +52,7 @@ function CardTopRow({ title, subtitle, onDetails, detailsLabel, icon }) {
           onClick={onDetails}
           className="text-xs text-[#2E7D32] bg-[#E8F5E9] px-3 py-1.5 rounded-xl hover:bg-[#C8E6C9] hover:shadow-sm transition-all duration-300 shrink-0 font-semibold group"
         >
-          {detailsLabel} <span className="inline-block transition-transform duration-300 group-hover:-translate-x-0.5">←</span>
+          {detailsLabel} <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5">←</span>
         </button>
       )}
     </div>
