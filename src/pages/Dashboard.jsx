@@ -213,8 +213,8 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
     };
 
     try {
-      // Use the environment variable provided by Netlify, or default to localhost for development
-      const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8001";
+      // Use the live Render backend as the default if the environment variable is not set
+      const API_BASE = import.meta.env.VITE_API_URL || "https://warif.onrender.com";
       
       // Ensure the URL is valid before fetching
       const fetchUrl = `${API_BASE.replace(/\/$/, "")}/chatbot/ask`;
