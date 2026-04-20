@@ -265,11 +265,11 @@ function MicroclimateGlanceCard({ onGo, seconds, activeFarm }) {
 
         <div className="flex flex-col items-center gap-4">
            <div className={`px-3 py-2 rounded-2xl flex flex-col items-center justify-center text-center shadow-sm min-w-[70px] border ${isOptimal ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
-              <div className={`text-[10px] font-bold mb-0.5 ${isOptimal ? 'text-emerald-600' : 'text-amber-600'}`}>{isEn ? 'Status' : 'الوضع'}</div>
-              <div className={`text-[13px] font-black ${isOptimal ? 'text-emerald-700' : 'text-amber-700'}`}>{isOptimal ? (isEn ? 'Optimal' : 'مثالي') : (isEn ? 'Alert' : 'تنبيه')}</div>
+              <div className={`text-[10px] font-bold mb-0.5 ${isOptimal ? 'text-[var(--status-success)]' : 'text-[var(--status-warning)]'}`}>{isEn ? 'Status' : 'الوضع'}</div>
+              <div className={`text-[13px] font-black ${isOptimal ? 'text-[var(--status-success)]' : 'text-[var(--status-warning)]'}`}>{isOptimal ? (isEn ? 'Optimal' : 'مثالي') : (isEn ? 'Alert' : 'تنبيه')}</div>
            </div>
            <div className="w-full">
-              <ClimateSparkline color={data.temp > 32 ? '#ef4444' : data.temp > 28 ? '#f59e0b' : '#10b981'} gradientId="climateGradHome" />
+              <ClimateSparkline color={data.temp > 32 ? 'var(--status-error)' : data.temp > 28 ? 'var(--status-warning)' : 'var(--status-success)'} gradientId="climateGradHome" />
            </div>
         </div>
       </div>
@@ -312,7 +312,7 @@ function SoilCropHealthGlanceCard({ onGo, seconds, activeFarm }) {
         </div>
 
         <div className="flex-1 max-w-[140px]">
-           <SoilSparkline color={isHealthy ? '#10b981' : '#f59e0b'} gradientId="soilGradHome" />
+           <SoilSparkline color={isHealthy ? 'var(--status-success)' : 'var(--status-warning)'} gradientId="soilGradHome" />
         </div>
       </div>
       </div>
@@ -418,7 +418,7 @@ function DSSGlanceCard({ onGo, seconds, activeFarm }) {
           <div key={idx} className="flex gap-4">
             {/* Green dot indicator */}
             <div className="flex-shrink-0 mt-2">
-               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+               <div className="w-2.5 h-2.5 rounded-full bg-[var(--status-success)] shadow-[0_0_8px_rgba(18,183,106,0.4)]" />
             </div>
 
             <div className="flex flex-col gap-1.5 flex-1">
@@ -473,7 +473,7 @@ function DigitalTwinCommandCenterCard({ onOpenAssets }) {
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
                 <div className="text-base font-black text-gray-800">{isEn ? 'Hardware & Sensors Log' : 'سجل المعدات والأجهزة'}</div>
-                <div className="text-[12px] text-emerald-700 font-black uppercase tracking-widest px-2.5 py-1 bg-emerald-50 rounded-xl">{isEn ? 'Active' : 'نشط'}</div>
+                <div className="text-[12px] text-[var(--status-success)] font-black uppercase tracking-widest px-2.5 py-1 bg-emerald-50 rounded-xl">{isEn ? 'Active' : 'نشط'}</div>
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center mt-2">

@@ -110,10 +110,10 @@ export default function SignIn({ onLogin, lang: propLang, onLangChange }) {
         )}
 
         {/* Brand Header Section (Logo + Progress) */}
-        <div className="pt-10 px-8 flex flex-col items-center">
-           <div className="animate-float">
-             <img src="/logo.png" alt="وارِف" className="w-32 h-32 object-contain drop-shadow-2xl" />
-           </div>
+        <div className="pt-6 px-8 flex flex-col items-center">
+            <div className="animate-float">
+              <img src="/logo.png" alt="وارِف" className="w-24 h-24 object-contain drop-shadow-2xl" />
+            </div>
            
            {page === 'registerFarm' && (
             <div className="flex items-center gap-2.5 mt-2 animate-fade-in-up">
@@ -129,7 +129,7 @@ export default function SignIn({ onLogin, lang: propLang, onLangChange }) {
         </div>
 
         {/* Content Wrapper with Animated Swipes */}
-        <div className={`p-8 pt-6 transition-all duration-300 ease-out ${transitioning
+        <div className={`px-8 pt-2 pb-4 transition-all duration-300 ease-out ${transitioning
             ? direction === 'forward'
               ? 'opacity-0 translate-x-[-40px] scale-[0.98]'
               : 'opacity-0 translate-x-[40px] scale-[0.98]'
@@ -190,10 +190,10 @@ function InputField({ label, placeholder, type = "text", value, onChange, error,
           onKeyDown={onKeyDown}
           onFocus={() => setFocussed(true)}
           onBlur={() => setFocussed(false)}
-          className={`w-full bg-white/40 border-2 rounded-[20px] py-4 text-[14px] font-bold outline-none transition-all duration-300 input-enhanced
+          className={`w-full bg-white border-2 rounded-[20px] py-4 text-[14px] font-bold outline-none transition-all duration-300 input-enhanced
                      ${isRtl ? 'pr-12 pl-4' : 'pl-12 pr-4'}
-                     ${error ? 'border-red-400 bg-red-50/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 
-                       focussed ? 'border-emerald-500 bg-white shadow-xl shadow-emerald-500/10' : 'border-emerald-600/10 hover:border-emerald-200'
+                     ${error ? 'border-[var(--status-error)] bg-red-50/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 
+                       focussed ? 'border-emerald-500 bg-white shadow-xl shadow-emerald-500/10' : 'border-gray-200 hover:border-emerald-200'
                      }`}
           placeholder={placeholder}
         />
@@ -258,9 +258,9 @@ function LoginPage({ onLogin, onNewUser, T, isRtl }) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="text-center animate-fade-in-up">
-        <h1 className="text-2xl font-black text-emerald-900 tracking-tight leading-tight">{T.loginTitle}</h1>
+    <div className="flex flex-col gap-4">
+      <div className="text-center animate-fade-in-up mb-1">
+        <h1 className="text-xl font-black text-emerald-900 tracking-tight leading-tight">{T.loginTitle}</h1>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -292,7 +292,7 @@ function LoginPage({ onLogin, onNewUser, T, isRtl }) {
       <div className="animate-fade-in-up delay-4">
         <button
           onClick={handleLogin} disabled={loading}
-          className="btn-primary w-full py-5 bg-gradient-to-l from-emerald-800 to-emerald-600 text-white rounded-[24px] font-black text-lg shadow-2xl shadow-emerald-900/10 hover:shadow-emerald-900/20 transition-all flex items-center justify-center gap-3 mt-2"
+          className="btn-primary w-full py-4 bg-gradient-to-l from-emerald-800 to-emerald-600 text-white rounded-[24px] font-black text-lg shadow-xl shadow-emerald-900/10 hover:shadow-emerald-900/20 transition-all flex items-center justify-center gap-3 mt-2"
         >
           {loading ? (
             <svg className="animate-spin h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10" strokeOpacity="0.2"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
@@ -346,9 +346,9 @@ function RegisterUserPage({ onNext, T, isRtl }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="text-center mb-2 animate-fade-in-up">
-        <h1 className="text-2xl font-black text-emerald-900 tracking-tight">{T.createAccount}</h1>
-        <p className="text-[12px] font-bold text-gray-400 mt-1">{T.enterData}</p>
+      <div className="text-center mb-1 animate-fade-in-up">
+        <h1 className="text-xl font-black text-emerald-900 tracking-tight">{T.createAccount}</h1>
+        <p className="text-[11px] font-bold text-gray-400 mt-0.5">{T.enterData}</p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -414,26 +414,26 @@ const SelectMenu = ({ label, value, options, onChange, delayClass, isRtl, isOpen
   return (
     <div 
       ref={containerRef}
-      className={`flex flex-col gap-1.5 ${isRtl ? 'text-right' : 'text-left'} animate-fade-in-up ${delayClass} relative ${isOpen ? 'z-[1000]' : 'z-10'}`}
+      className={`flex flex-col gap-1.5 ${isRtl ? 'text-right' : 'text-left'} animate-fade-in-up duration-500 ${delayClass} relative ${isOpen ? 'z-[1000]' : 'z-10'}`}
     >
-       <label className="text-[11px] font-black uppercase tracking-tight text-emerald-800/60">{label}</label>
+       <label className={`text-[12px] font-black uppercase tracking-tight text-emerald-800/60 transition-colors ${isOpen ? 'text-emerald-600' : ''}`}>{label}</label>
        
        {/* Trigger */}
        <div 
          onClick={onToggle}
-         className={`w-full bg-white border-2 rounded-[18px] py-3.5 px-4 text-[13px] font-bold outline-none cursor-pointer transition-all duration-300 flex items-center justify-between group
-                    ${isOpen ? 'border-emerald-500 bg-white ring-8 ring-emerald-500/5 shadow-xl' : 'border-emerald-100 hover:border-emerald-300 hover:bg-white/60 shadow-sm'}`}
+         className={`w-full bg-white/40 border-2 rounded-[20px] py-4 px-5 text-[14px] font-bold outline-none cursor-pointer transition-all duration-300 flex items-center justify-between group
+                    ${isOpen ? 'border-emerald-500 bg-white shadow-xl shadow-emerald-500/10' : 'border-emerald-600/10 hover:border-emerald-200 hover:bg-white/60'}`}
        >
           <span className={isOpen ? 'text-emerald-900' : 'text-emerald-800/80'}>{value}</span>
           <div className={`transition-transform duration-500 ${isOpen ? 'rotate-180' : ''}`}>
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><path d="M6 9l6 6 6-6"/></svg>
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isOpen ? 'text-emerald-600' : 'text-gray-400 opacity-60'}><path d="M6 9l6 6 6-6"/></svg>
           </div>
        </div>
 
-       {/* Options Dropdown */}
+       {/* Options Dropdown - CODE Style */}
        {isOpen && (
-         <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-[1002] bg-white border border-emerald-100 rounded-[24px] overflow-hidden shadow-[0_20px_60px_-10px_rgba(0,0,0,0.18)] animate-scale-in origin-top p-1.5 min-w-[180px]">
-           <div className="max-h-[180px] overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
+         <div className="absolute top-[calc(100%+8px)] left-0 right-0 z-[1002] bg-white border border-emerald-100 rounded-[24px] overflow-hidden shadow-[0_15px_40px_-5px_rgba(0,0,0,0.12)] animate-scale-in origin-top p-2">
+           <div className="max-h-[220px] overflow-y-auto custom-scrollbar flex flex-col gap-1">
              {options.map((opt) => {
                const isSelected = value === opt;
                return (
@@ -441,15 +441,15 @@ const SelectMenu = ({ label, value, options, onChange, delayClass, isRtl, isOpen
                    key={opt}
                    type="button"
                    onClick={() => { onChange(opt); onToggle(); }}
-                   className={`w-full text-right px-4 py-3 rounded-[14px] text-[13px] font-bold transition-all duration-300 flex items-center justify-between group/opt
+                   className={`w-full ${isRtl ? 'text-right' : 'text-left'} px-4 py-3.5 rounded-[16px] text-[13px] font-bold transition-all duration-300 flex items-center justify-between group/opt
                               ${isSelected 
-                                 ? 'bg-gradient-to-l from-emerald-800 to-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
-                                 : 'text-emerald-900 hover:bg-emerald-50'}`}
+                                 ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20' 
+                                 : 'text-gray-700 hover:bg-emerald-50'}`}
                  >
                    <span>{opt}</span>
                    {isSelected ? (
                      <div className="animate-scale-bounce">
-                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
                      </div>
                    ) : (
                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-200 opacity-0 group-hover/opt:opacity-100 transition-opacity" />
@@ -482,10 +482,10 @@ function FarmInfoStep({ onNext, T, isRtl }) {
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="text-center mb-2 animate-fade-in-up">
-        <h1 className="text-2xl font-black text-emerald-900 tracking-tight">{T.farmInfo}</h1>
-        <p className="text-[12px] font-bold text-gray-400 mt-1">{T.step1of3}</p>
+    <div className="flex flex-col gap-4">
+      <div className="text-center mb-1 animate-fade-in-up">
+        <h1 className="text-xl font-black text-emerald-900 tracking-tight">{T.farmInfo}</h1>
+        <p className="text-[11px] font-bold text-gray-400 mt-0.5">{T.step1of3}</p>
       </div>
 
       <div className="animate-fade-in-up delay-1">
@@ -519,26 +519,28 @@ function SensorSelectionStep({ onNext, T }) {
   const toggle = k => setSelected(p => p.includes(k) ? p.filter(x => x !== k) : [...p, k]);
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in-up">
+    <div className="flex flex-col gap-4 animate-fade-in-up">
       <div className="text-center mb-2">
         <h1 className="text-2xl font-black text-emerald-900 tracking-tight">{T.selectDevices}</h1>
         <p className="text-[12px] font-bold text-gray-400 mt-1">{T.step2of3}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {devices.map((d, i) => (
           <button
             key={d.key} onClick={() => toggle(d.key)}
-            className={`flex flex-col items-center gap-2 p-5 rounded-[30px] border-2 transition-all duration-500 animate-scale-bounce
-                       ${selected.includes(d.key) ? 'bg-white border-emerald-500 shadow-xl shadow-emerald-500/10' : 'bg-white/40 border-transparent hover:border-emerald-100 hover:bg-white/60'}`}
+            className={`flex flex-col items-center gap-1.5 p-4 rounded-[24px] border-2 transition-all duration-500 animate-scale-bounce
+                       ${selected.includes(d.key) 
+                         ? 'bg-white border-emerald-500 shadow-lg shadow-emerald-500/5 ring-4 ring-emerald-500/5' 
+                         : 'bg-gray-50/50 border-gray-100 hover:border-emerald-200 hover:bg-white'}`}
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            <div className={`transition-transform duration-500 ${selected.includes(d.key) ? 'scale-110 rotate-3' : 'scale-100 opacity-60'}`}>{d.icon}</div>
-            <span className={`text-[13px] font-black transition-colors ${selected.includes(d.key) ? 'text-emerald-900' : 'text-emerald-800/60'}`}>{d.name}</span>
-            <span className="text-[10px] font-bold text-gray-400 px-2 text-center leading-tight">{d.desc}</span>
+            <div className={`transition-transform duration-500 ${selected.includes(d.key) ? 'scale-105 rotate-3' : 'scale-90 opacity-60'}`}>{d.icon}</div>
+            <span className={`text-[13px] font-black transition-colors ${selected.includes(d.key) ? 'text-emerald-900' : 'text-emerald-900/70'}`}>{d.name}</span>
+            <span className={`text-[10px] font-bold px-1 text-center leading-tight transition-colors ${selected.includes(d.key) ? 'text-emerald-700/80' : 'text-gray-500'}`}>{d.desc}</span>
             <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500 mt-1
-                           ${selected.includes(d.key) ? 'bg-emerald-600 scale-100' : 'bg-white/80 scale-75 border border-emerald-50'}`}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" className={selected.includes(d.key) ? 'opacity-100' : 'opacity-0'}><path d="M20 6L9 17l-5-5"/></svg>
+                           ${selected.includes(d.key) ? 'bg-[var(--status-success)] scale-100 shadow-md' : 'bg-gray-200/50 scale-90'}`}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" className={selected.includes(d.key) ? 'opacity-100' : 'opacity-0'}><path d="M20 6L9 17l-5-5"/></svg>
             </div>
           </button>
         ))}
@@ -605,7 +607,7 @@ function DeviceScanPage({ onFinish, T, isRtl, selectedSensors }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in-up">
+    <div className="flex flex-col gap-4 animate-fade-in-up">
       <div className="text-center mb-2">
         <h1 className="text-2xl font-black text-emerald-900 tracking-tight">{T.pairDevices}</h1>
         <p className="text-[12px] font-bold text-gray-400 mt-1">{T.step3of3}</p>
@@ -614,7 +616,7 @@ function DeviceScanPage({ onFinish, T, isRtl, selectedSensors }) {
       <div className="flex flex-col gap-2.5">
         {Object.entries({ wifi: T.wifi, bluetooth: T.bluetooth, location: T.location }).map(([key, label], i) => (
           <div key={key} className="flex flex-col">
-            <div className={`flex justify-between items-center px-5 py-3.5 rounded-[22px] transition-all duration-300 ${permissions[key] ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-white/40 border-white/20'} border animate-fade-in-up ${isRtl ? 'flex-row-reverse' : ''}`}
+            <div className={`flex justify-between items-center px-5 py-3.5 rounded-[22px] transition-all duration-300 ${permissions[key] ? 'bg-emerald-50/50 border-emerald-200 shadow-sm' : 'bg-gray-50/50 border-gray-100'} border animate-fade-in-up ${isRtl ? 'flex-row-reverse' : ''}`}
               style={{ animationDelay: `${i * 100}ms` }}>
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${permissions[key] ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'bg-gray-100 text-gray-400'}`}>
@@ -659,7 +661,7 @@ function DeviceScanPage({ onFinish, T, isRtl, selectedSensors }) {
         )}
         
         <button onClick={handleScan} disabled={scanning || !isScanEnabled}
-          className={`btn-primary w-full py-5 border-2 rounded-[24px] font-black text-sm flex items-center justify-center gap-3 transition-all relative z-10
+          className={`btn-primary w-full py-4 border-2 rounded-[24px] font-black text-sm flex items-center justify-center gap-3 transition-all relative z-10
                      ${isScanEnabled ? 'border-emerald-600 text-emerald-700 hover:bg-emerald-50 animate-scan-glow' : 'border-gray-200 text-gray-400 bg-gray-50 opacity-60'}`}>
           {scanning ? (
             <>
@@ -678,7 +680,7 @@ function DeviceScanPage({ onFinish, T, isRtl, selectedSensors }) {
         )}
       </div>
 
-      <div className="bg-white/40 rounded-[28px] border border-white/20 overflow-hidden min-h-[160px] flex flex-col shadow-inner shadow-black/5">
+      <div className="bg-gray-50/30 rounded-[28px] border border-gray-100 overflow-hidden min-h-[160px] flex flex-col shadow-inner shadow-black/5">
         <div className={`text-[11px] font-black text-emerald-800/40 px-5 py-3 border-b border-white/20 uppercase tracking-widest ${isRtl ? 'text-right' : 'text-left'}`}>{T.availableDevices}</div>
         <div className="flex-1 overflow-y-auto max-h-[220px] custom-scrollbar">
           {scanDone && foundDevices.length > 0 ? (
@@ -725,7 +727,7 @@ function DeviceScanPage({ onFinish, T, isRtl, selectedSensors }) {
       </div>
 
       <button onClick={() => onFinish({ sensors: selectedSensors, linkedDevice: selectedDevice, deviceName, wifi: selectedWifi })} 
-        className={`btn-primary w-full py-5 rounded-[24px] font-black text-lg transition-all duration-500
+        className={`btn-primary w-full py-4 rounded-[24px] font-black text-lg transition-all duration-500
                    ${selectedDevice ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-600/30 grow-animation' : 'bg-emerald-800 text-white shadow-xl shadow-emerald-900/10'}`}>
         {selectedDevice ? T.connectAndEnter : T.skipAndEnter}
       </button>

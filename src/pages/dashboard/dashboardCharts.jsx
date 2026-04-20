@@ -38,9 +38,9 @@ export function Donut({ value }) {
   const off = c - (v / 100) * c;
 
   const getColor = (val) => {
-    if (val >= 80) return "#10b981"; // Emerald
-    if (val >= 50) return "#f59e0b"; // Amber
-    return "#ef4444"; // Red
+    if (val >= 80) return "var(--status-success)"; 
+    if (val >= 50) return "var(--status-warning)"; 
+    return "var(--status-error)"; 
   };
 
   return (
@@ -99,9 +99,9 @@ export function IrrigationDonut({ value }) {
   const off = c - (v / 100) * c;
 
   const getColor = (val) => {
-    if (val >= 75) return "#10b981"; 
-    if (val >= 45) return "#f59e0b";
-    return "#ef4444";
+    if (val >= 75) return "var(--status-success)"; 
+    if (val >= 45) return "var(--status-warning)";
+    return "var(--status-error)";
   };
 
   return (
@@ -186,7 +186,7 @@ export function HealthStyleBarChart({
   data, 
   unit, 
   metricName, 
-  color = "#10b981", 
+  color = "var(--status-success)", 
   xAxisTitle,
   yAxisTitle,
   T,
@@ -490,12 +490,12 @@ export function DualResourceBarChart({
             return (
               <g key={i} className="cursor-pointer">
                 <rect 
-                   x={groupX} y={yyWater} width={barW} height={hhWater} rx="4" fill="#3B82F6" 
+                   x={groupX} y={yyWater} width={barW} height={hhWater} rx="4" fill="var(--status-info)" 
                    onMouseEnter={() => { setHoveredIdx(i); setHoveredMetric('water'); }}
                    opacity={hoveredIdx === i && hoveredMetric === 'water' ? 1 : hoveredIdx === null ? 1 : 0.3}
                 />
                 <rect 
-                   x={groupX + barW + 4} y={yyPower} width={barW} height={hhPower} rx="4" fill="#EAB308" 
+                   x={groupX + barW + 4} y={yyPower} width={barW} height={hhPower} rx="4" fill="var(--status-warning)" 
                    onMouseEnter={() => { setHoveredIdx(i); setHoveredMetric('power'); }}
                    opacity={hoveredIdx === i && hoveredMetric === 'power' ? 1 : hoveredIdx === null ? 1 : 0.3}
                 />
@@ -621,11 +621,11 @@ export function SustainabilityLineChart({
 
       <div className="flex items-center justify-center gap-6 mb-6">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200" />
+          <div className="w-3 h-3 rounded-full bg-[var(--status-info)] shadow-sm shadow-blue-200" />
           <span className="text-[12px] font-black text-gray-600">{T?.waterLabel || 'Water'}</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-[#EAB308] shadow-sm shadow-yellow-200" />
+          <div className="w-3 h-3 rounded-full bg-[var(--status-warning)] shadow-sm shadow-yellow-200" />
           <span className="text-[12px] font-black text-gray-600">{T?.powerLabel || 'Power'}</span>
         </div>
       </div>
@@ -688,8 +688,8 @@ export function SustainabilityLineChart({
 
           <path d={getAreaPath('water')} fill="url(#waterGrad)" />
           <path d={getAreaPath('power')} fill="url(#powerGrad)" />
-          <path d={getPath('water')} fill="none" stroke="#3B82F6" strokeWidth="4.5" strokeLinecap="round" />
-          <path d={getPath('power')} fill="none" stroke="#EAB308" strokeWidth="4.5" strokeLinecap="round" />
+          <path d={getPath('water')} fill="none" stroke="var(--status-info)" strokeWidth="4.5" strokeLinecap="round" />
+          <path d={getPath('power')} fill="none" stroke="var(--status-warning)" strokeWidth="4.5" strokeLinecap="round" />
 
           {data.map((d, i) => {
             const xx = getX(i);
