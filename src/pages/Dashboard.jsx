@@ -3,6 +3,71 @@ import { translations } from "../i18n";
 import { Sidebar, DashboardHome, DecisionSupportPage, IrrigationPage, MicroclimatePage, SoilRootDataPage, PlaceholderPage, AccountAndSettingsPages } from "./dashboard/dashboardSections";
 import { WeatherIcon, Account_ModalShell } from "./dashboard/dashboardShared";
 
+const DeviceRow = ({ s, T, isEn, isRtl }) => (
+  <div className="flex items-center justify-between p-3.5 rounded-[22px] bg-white border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all duration-300 group">
+    <div className="flex items-center gap-3.5">
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-sm ${s.status === 'warning' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-100 group-hover:bg-emerald-100 group-hover:scale-105'}`}>
+        {s.type.includes('مضخة') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5s-3 3.5-3 5.5a7 7 0 0 0 7 7z"/></svg>
+        ) : s.type.includes('مروحة') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 12L12 3C15 3 18 6 18 9S15 12 12 12Z" />
+            <path d="M12 12L21 12C21 15 18 18 15 18S12 15 12 12Z" />
+            <path d="M12 12L12 21C9 21 6 18 6 15S9 12 12 12Z" />
+            <path d="M12 12L3 12C3 9 6 6 9 6S12 9 12 12Z" />
+          </svg>
+        ) : s.type.includes('مكيف') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="m20 16-4-4 4-4"/><path d="m4 8 4 4-4 4"/><path d="m16 4-4 4-4-4"/><path d="m8 20l4-4 4 4"/></svg>
+        ) : s.type.includes('حرارة') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 14.7V3a2 2 0 0 0-4 0v11.7a4.5 4.5 0 1 0 4 0z"/></svg>
+        ) : s.type.includes('تربة') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20c0-3 3-4 8-4s8 1 8 4"/><path d="M12 16V8"/><path d="M12 8c-2-2-5-2-5 0 0 3 3 4 5 4"/><path d="M12 8c2-2 5-2 5 0 0 3-3 4-5 4"/></svg>
+        ) : s.type.includes('رطوبة') ? (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22c4.4 0 8-3.6 8-8 0-6-8-12-8-12S4 8 4 14c0 4.4 3.6 8 8 8z" />
+            <path d="M2 13h5c1 0 1 1 2 1s1-1 2-1h2" />
+            <path d="M2 17h5c1 0 1 1 2 1s1-1 2-1h2" />
+            <path d="M2 9h5c1 0 1 1 2 1s1-1 2-1h2" />
+          </svg>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4v16h16V4H4zm4 4h8v8H8V8z"/></svg>
+        )}
+      </div>
+      <div className={isRtl ? 'text-right' : 'text-left'}>
+        <div className="text-[15px] font-black text-gray-800 leading-tight">
+          {s.name === "حساس التربة" ? T.sensorSoilName : 
+           s.name === "حساس الحرارة" ? T.sensorTempName :
+           s.name === "حساس الرطوبة" ? T.sensorHumName :
+           s.name === "مضخة الري الرئيسية" ? T.pumpMainName :
+           s.name === "مروحة تبريد 1" ? T.fanCoolingName :
+           s.name === "وحدة التكييف" ? T.acUnitName : s.name}
+        </div>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-[11px] font-bold text-gray-400 capitalize">
+            {s.type === "رطوبة التربة" ? T.soilHumLabel :
+             s.type === "درجة الحرارة" ? T.tempLabel :
+             s.type === "رطوبة الهواء" ? T.humLabel :
+             s.type === "مضخة مياه" ? (isEn ? "Water Pump" : "مضخة مياه") :
+             s.type === "مروحة" ? (isEn ? "Fan" : "مروحة") :
+             s.type === "مكيف" ? (isEn ? "AC" : "مكيف") : s.type}
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    <div className={`${isRtl ? 'text-left' : 'text-right'} flex flex-col items-end`}>
+      <div className="text-[14px] font-black tracking-tight" style={{ color: s.status === 'warning' ? 'var(--status-warning)' : 'var(--status-success)' }}>
+        {s.value === "تعمل" ? T.statusWorking :
+         s.value === "نشط" ? T.statusActive :
+         s.value === "خامل" ? T.statusIdle : s.value}
+      </div>
+      <div className="text-[9px] font-bold text-gray-300 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {isEn ? 'Sync: 2m ago' : 'حدث قبل دقيقتين'}
+      </div>
+    </div>
+  </div>
+);
+
 /* =========================================================
    WARIF | Dashboard (Scope: Sensors + Irrigation + Recs + Account/Settings)
    - RTL Arabic UI
@@ -433,10 +498,10 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
           </div>
           </main>
 
+          {/* Chatbot Toggle */}
           <button
             onClick={() => setShowChat(!showChat)}
             className={`fixed bottom-6 ${isRtl ? 'left-6' : 'right-6'} w-20 h-20 bg-gradient-to-br from-[#16a34a] to-[#15803d] rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl hover:shadow-green-600/25 transition-all duration-500 z-50 ${!showChat ? 'animate-pulse-glow' : ''}`}
-            style={{ transform: showChat ? 'rotate(0deg)' : 'rotate(0deg)' }}
             data-chatbot
           >
             <div className={`transition-all duration-300 ${showChat ? 'rotate-90 scale-90' : 'rotate-0 scale-100'}`}>
@@ -448,6 +513,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
             </div>
           </button>
 
+          {/* Chatbot Window */}
           {showChat && (
             <div className={`fixed bottom-24 ${isRtl ? 'left-6' : 'right-6'} w-96 h-[480px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 flex flex-col overflow-hidden z-50 animate-chat-slide-up`} data-chatbot>
               <div className={`bg-gradient-to-l ${isRtl ? 'from-[#16a34a] to-[#15803d]' : 'from-[#15803d] to-[#16a34a]'} px-4 py-3.5 flex items-center gap-3`}>
@@ -497,7 +563,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
                   </div>
                 ))}
               </div>
-              <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80">
+              <div className="px-3 py-2 flex gap-1.5 flex-wrap border-t border-gray-100/60 bg-white/80 shrink-0">
                 {(isEn ? ["How's the greenhouse?", "When's next irrigation?", "What are the recs?"] : ["كيف حال المحمية؟", "متى الري القادم؟", "ما التوصيات؟"]).map(q => (
                   <button key={q} onClick={() => sendToAI(q)}
                     className="text-[13px] px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a] hover:border-[#bbf7d0] transition-all duration-300">
@@ -505,7 +571,7 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
                   </button>
                 ))}
               </div>
-              <div className="px-3 py-2.5 flex gap-2 border-t border-gray-100/60 bg-white">
+              <div className="px-3 py-2.5 flex gap-2 border-t border-gray-100/60 bg-white shrink-0">
                 <input value={chatInput} onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && chatInput.trim()) { sendToAI(chatInput); setChatInput(""); } }}
                   placeholder={isEn ? "Ask me about your farm..." : "اسألني عن محميتك..."}
@@ -518,109 +584,90 @@ export default function Dashboard({ onLogout, lang: propLang, onLangChange }) {
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* ===== Unified Sensors Popup Modal ===== */}
-      {showSensorsPopup && (
-        <Account_ModalShell onClose={() => setShowSensorsPopup(false)} isRtl={isRtl}>
-          <div className="bg-white rounded-[28px] overflow-hidden shadow-2xl animate-modal-in max-h-[85vh] flex flex-col w-[320px] max-w-[92vw]" dir={isRtl ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
-            {/* Compact Header */}
-            <div className="bg-emerald-600 p-3 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="4" y="4" width="16" height="16" rx="4" /><circle cx="12" cy="12" r="3" /><path d="M12 7v-3" /></svg>
+          {/* ===== Redesigned Sensors & Devices Official Log Modal ===== */}
+          {showSensorsPopup && (
+            <Account_ModalShell onClose={() => setShowSensorsPopup(false)} isRtl={isRtl}>
+              <div className="bg-white rounded-[32px] overflow-hidden shadow-2xl animate-modal-in max-h-[85vh] flex flex-col w-[420px] max-w-[95vw] border border-gray-100" dir={isRtl ? 'rtl' : 'ltr'} onClick={e => e.stopPropagation()}>
+                
+                {/* Professional Header Section */}
+                <div className="bg-gradient-to-br from-emerald-700 to-emerald-900 p-5 text-white shrink-0 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-16 translate-x-16 blur-xl" />
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-xl border border-white/20 shadow-lg">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <rect x="4" y="4" width="16" height="16" rx="4" />
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M12 7v-3" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-black leading-tight tracking-tight">{isEn ? 'Hardware Inventory' : 'سجل المعدات والأجهزة'}</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="w-2 h-2 rounded-full bg-[var(--status-success)] shadow-[0_0_8px_var(--status-success)] animate-pulse" />
+                          <p className="text-emerald-100/90 text-[11px] font-bold uppercase tracking-widest">
+                            {isEn ? 'All Systems Operational' : 'كافة الأنظمة تعمل بكفاءة'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setShowSensorsPopup(false)}
+                      className="w-10 h-10 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center transition-all active:scale-90"
+                    >
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-[15px] font-bold leading-tight">{isEn ? 'Sensors & Devices' : 'الحساسات والأجهزة المتصلة'}</h2>
-                  <p className="text-emerald-100 text-[10px] opacity-90 font-bold leading-tight">{isEn ? 'Live Telemetry Status' : 'حالة الاتصال والبيانات اللحظية'}</p>
+
+                {/* List Content Area */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/30 p-4">
+                  {/* Category: Monitoring Sensors */}
+                  <div className="mb-6">
+                    <div className={`flex items-center gap-2 px-2 mb-3 ${isRtl ? 'flex-row' : 'flex-row-reverse justify-end'}`}>
+                      <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{isEn ? 'Environmental Sensors' : 'حساسات البيئة والمراقبة'}</span>
+                      <div className="h-[1px] flex-1 bg-gray-100" />
+                    </div>
+                    <div className="space-y-2">
+                      {connectedSensors.filter(s => ['رطوبة التربة', 'درجة الحرارة', 'رطوبة الهواء'].includes(s.type)).map((s, i) => (
+                        <DeviceRow key={i} s={s} T={T} isEn={isEn} isRtl={isRtl} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Category: Control Actuators */}
+                  <div className="mb-4">
+                    <div className={`flex items-center gap-2 px-2 mb-3 ${isRtl ? 'flex-row' : 'flex-row-reverse justify-end'}`}>
+                      <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{isEn ? 'Control & Actuators' : 'معدات التحكّم والتشغيل'}</span>
+                      <div className="h-[1px] flex-1 bg-gray-100" />
+                    </div>
+                    <div className="space-y-2">
+                      {connectedSensors.filter(s => !['رطوبة التربة', 'درجة الحرارة', 'رطوبة الهواء'].includes(s.type)).map((s, i) => (
+                        <DeviceRow key={i} s={s} T={T} isEn={isEn} isRtl={isRtl} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Structured Footer */}
+                <div className="p-4 bg-white border-t border-gray-100 flex items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                  <button 
+                    onClick={() => { go("settings"); setShowSensorsPopup(false); }}
+                    className="flex items-center gap-2.5 px-8 py-2.5 rounded-2xl bg-white border-2 border-gray-100 text-[13px] font-black text-gray-700 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-all active:scale-95"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    {isEn ? 'Manage Hardware' : 'إدارة الأجهزة'}
+                  </button>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowSensorsPopup(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            </div>
-
-            {/* Content Container */}
-            <div className="p-1.5 flex flex-col gap-1.5 overflow-auto custom-scrollbar">
-              {connectedSensors.map((s, i) => (
-                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-[20px] border border-gray-50 bg-[#fafafa]/50 hover:bg-white hover:border-emerald-100 hover:shadow-md transition-all duration-300 group">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${s.status === 'warning' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'}`}>
-                      {s.type.includes('مضخة') ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                      ) : s.type.includes('مروحة') || s.type.includes('مكيف') ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-                      ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-                          <path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1.5" fill="currentColor" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className={isRtl ? 'text-right' : 'text-left'}>
-                      <div className="text-[14.5px] font-black text-gray-800">
-                        {s.name === "حساس التربة" ? T.sensorSoilName : 
-                         s.name === "حساس الحرارة" ? T.sensorTempName :
-                         s.name === "حساس الرطوبة" ? T.sensorHumName :
-                         s.name === "مضخة الري الرئيسية" ? T.pumpMainName :
-                         s.name === "مروحة تبريد 1" ? T.fanCoolingName :
-                         s.name === "وحدة التكييف" ? T.acUnitName : s.name}
-                      </div>
-                      <div className="text-[11px] font-bold text-gray-400 mt-0.5">
-                        {s.type === "رطوبة التربة" ? T.soilHumLabel :
-                         s.type === "درجة الحرارة" ? T.tempLabel :
-                         s.type === "رطوبة الهواء" ? T.humLabel :
-                         s.type === "مضخة مياه" ? (isEn ? "Water Pump" : "مضخة مياه") :
-                         s.type === "مروحة" ? (isEn ? "Fan" : "مروحة") :
-                         s.type === "مكيف" ? (isEn ? "AC" : "مكيف") : s.type}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <div className={`${isRtl ? 'text-left' : 'text-right'} flex flex-col items-end`}>
-                      <div className="text-[10px] font-black text-gray-400 mb-0.5 tracking-tighter uppercase">{T.liveValueLabel}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`text-[16px] font-black ${s.status === 'warning' ? 'text-orange-600' : 'text-emerald-700'}`}>
-                          {s.value === "تعمل" ? T.statusWorking :
-                           s.value === "نشط" ? T.statusActive :
-                           s.value === "خامل" ? T.statusIdle : s.value}
-                        </span>
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'warning' ? 'bg-orange-500 animate-pulse' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'}`} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer buttons */}
-            <div className="p-3 bg-gray-50/50 border-t border-gray-50 flex items-center justify-between">
-              <button 
-                onClick={() => { go("settings"); setShowSensorsPopup(false); }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-[13px] font-black text-gray-700 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm active:scale-95"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                {isEn ? 'Hardware' : 'تعديل الأجهزة'}
-              </button>
-              <button 
-                onClick={() => setShowSensorsPopup(false)}
-                className="px-8 py-2 rounded-xl bg-emerald-600 text-white font-black text-[13px] shadow-lg shadow-emerald-100 active:scale-95 transition-all hover:bg-emerald-700"
-              >
-                {isEn ? 'Close' : 'إغلاق'}
-              </button>
-            </div>
-          </div>
-        </Account_ModalShell>
-      )}
-
+            </Account_ModalShell>
+          )}
+        </div>
+      </div>
     </>
   );
 }
-
-/* =========================================================
-   Sidebar (Persistent — always visible)
-========================================================= */
